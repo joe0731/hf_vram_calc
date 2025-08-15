@@ -1,0 +1,34 @@
+{
+  "max_gpu_display": 8,
+  "preferred_categories": ["datacenter", "consumer"],
+  "memory_color_thresholds": {
+    "green": 8,
+    "yellow": 24,
+    "red": 80
+  },
+  "table_styles": {
+    "memory_table": {
+      "box": "ROUNDED",
+      "show_lines": true,
+      "header_style": "bold magenta",
+      "title_style": "bold blue"
+    },
+    "parallelization_table": {
+      "box": "DOUBLE_EDGE", 
+      "show_lines": true,
+      "header_style": "bold cyan",
+      "title_style": "bold green"
+    },
+    "gpu_table": {
+      "box": "HEAVY_EDGE",
+      "show_lines": true,
+      "header_style": "bold white",
+      "title_style": "bold cyan"
+    }
+  },
+  "progress_settings": {
+    "show_progress": true,
+    "spinner_style": "dots",
+    "progress_color": "cyan"
+  }
+}

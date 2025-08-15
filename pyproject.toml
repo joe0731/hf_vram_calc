@@ -1,0 +1,96 @@
+[build-system]
+requires = ["hatchling==1.26.3", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "model_vram_calc"
+version = "1.0.0"
+description = "GPU memory calculator for Hugging Face models with different data types and parallelization strategies"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    { name = "HF VRAM Calculator Contributors", email = "hf-vram-calc@example.com" },
+]
+keywords = [
+    "gpu",
+    "memory",
+    "huggingface",
+    "transformer",
+    "vram",
+    "calculator",
+    "ml",
+    "ai"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Hardware",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.25.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "isort>=5.0.0",
+    "flake8>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/example/hf-vram-calc"
+Repository = "https://github.com/example/hf-vram-calc"
+Issues = "https://github.com/example/hf-vram-calc/issues"
+
+[project.scripts]
+hf-vram-calc = "hf_vram_calc.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hf_vram_calc"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/BUILD.md",
+    "/CONFIG_GUIDE.md",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["hf_vram_calc"]

@@ -1,0 +1,146 @@
+[
+  {
+    "name": "RTX 4090",
+    "memory_gb": 24,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4080 Super", 
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4080",
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4070 Ti Super",
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4070 Ti",
+    "memory_gb": 12,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4070 Super",
+    "memory_gb": 12,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4070",
+    "memory_gb": 12,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 4060 Ti",
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "RTX 3090 Ti",
+    "memory_gb": 24,
+    "category": "consumer",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "RTX 3090",
+    "memory_gb": 24,
+    "category": "consumer",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "RTX 3080 Ti",
+    "memory_gb": 12,
+    "category": "consumer",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "A100 40GB",
+    "memory_gb": 40,
+    "category": "datacenter",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "A100 80GB",
+    "memory_gb": 80,
+    "category": "datacenter",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "H100 80GB",
+    "memory_gb": 80,
+    "category": "datacenter",
+    "architecture": "Hopper"
+  },
+  {
+    "name": "H100 94GB",
+    "memory_gb": 94,
+    "category": "datacenter",
+    "architecture": "Hopper"
+  },
+  {
+    "name": "A40",
+    "memory_gb": 48,
+    "category": "datacenter",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "A30",
+    "memory_gb": 24,
+    "category": "datacenter",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "A10",
+    "memory_gb": 24,
+    "category": "datacenter",
+    "architecture": "Ampere"
+  },
+  {
+    "name": "V100 32GB",
+    "memory_gb": 32,
+    "category": "datacenter",
+    "architecture": "Volta"
+  },
+  {
+    "name": "V100 16GB",
+    "memory_gb": 16,
+    "category": "datacenter",
+    "architecture": "Volta"
+  },
+  {
+    "name": "T4",
+    "memory_gb": 16,
+    "category": "datacenter",
+    "architecture": "Turing"
+  },
+  {
+    "name": "L40S",
+    "memory_gb": 48,
+    "category": "datacenter",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "L40",
+    "memory_gb": 48,
+    "category": "datacenter",
+    "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "L4",
+    "memory_gb": 24,
+    "category": "datacenter",
+    "architecture": "Ada Lovelace"
+  }
+]

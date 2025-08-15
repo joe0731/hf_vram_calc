@@ -1,0 +1,42 @@
+{
+  "fp32": {
+    "bytes_per_param": 4,
+    "description": "32-bit floating point"
+  },
+  "fp16": {
+    "bytes_per_param": 2,
+    "description": "16-bit floating point"
+  },
+  "bf16": {
+    "bytes_per_param": 2,
+    "description": "Brain Float 16"
+  },
+  "fp8": {
+    "bytes_per_param": 1,
+    "description": "8-bit floating point"
+  },
+  "int8": {
+    "bytes_per_param": 1,
+    "description": "8-bit integer"
+  },
+  "int4": {
+    "bytes_per_param": 0.5,
+    "description": "4-bit integer"
+  },
+  "mxfp4": {
+    "bytes_per_param": 0.5,
+    "description": "Microsoft FP4"
+  },
+  "nvfp4": {
+    "bytes_per_param": 0.5,
+    "description": "NVIDIA FP4"
+  },
+  "awq_int4": {
+    "bytes_per_param": 0.5,
+    "description": "AWQ 4-bit quantization"
+  },
+  "fp4": {
+    "bytes_per_param": 0.5,
+    "description": "4-bit floating point"
+  }
+}
