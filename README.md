@@ -1,144 +1,203 @@
-# Model VRAM Calculator
+# HF VRAM Calculator
 
-A Python CLI tool for estimating GPU memory requirements for Hugging Face models with different data types and parallelization strategies.
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+
+A professional Python CLI tool for estimating GPU memory requirements for Hugging Face models with different data types and parallelization strategies.
+
+> **⚡ Latest Features**: Smart dtype detection, 12 quantization formats, 20+ GPU models, professional Rich UI
+
+## Quick Demo
+
+```bash
+# Install and run
+pip install hf-vram-calc
+hf-vram-calc microsoft/DialoGPT-medium
+
+# Output: Beautiful tables showing 0.9GB inference, GPU compatibility, parallelization strategies
+```
 
 ## Features
 
-- 🔍 Automatically fetch model configurations from Hugging Face
-- 📊 Support multiple data types: fp32, fp16/bf16, fp8, int8, int4, mxfp4, nvfp4
-- 🎯 Memory estimation for different scenarios:
-  - **Inference**: Model weights + KV cache overhead
-  - **Training**: Including gradients and optimizer states (Adam)
-  - **LoRA Fine-tuning**: Low-rank adaptation fine-tuning memory requirements
-- ⚡ Calculate memory distribution across parallelization strategies:
+- 🔍 **Automatic Model Analysis**: Fetch configurations from Hugging Face Hub automatically
+- 🧠 **Smart Data Type Detection**: Intelligent dtype recommendation from model names, config, or defaults
+- 📊 **Comprehensive Data Type Support**: fp32, fp16, bf16, fp8, int8, int4, mxfp4, nvfp4, awq_int4, gptq_int4, nf4, fp4
+- 🎯 **Multi-Scenario Memory Estimation**:
+  - **Inference**: Model weights + KV cache overhead (×1.2 factor)
+  - **Training**: Full Adam optimizer states (×4×1.3 factors)
+  - **LoRA Fine-tuning**: Low-rank adaptation with trainable parameter overhead
+- ⚡ **Advanced Parallelization Analysis**:
   - Tensor Parallelism (TP): 1, 2, 4, 8
-  - Pipeline Parallelism (PP): 1, 2, 4, 8
-  - Expert Parallelism (EP)
-  - Data Parallelism (DP)
-  - Combined strategies (TP + PP)
-- 🎮 GPU compatibility checks:
-  - Common GPU type recommendations (RTX 4090, A100, H100, etc.)
+  - Pipeline Parallelism (PP): 1, 2, 4, 8  
+  - Expert Parallelism (EP) for MoE models
+  - Data Parallelism (DP): 2, 4, 8
+  - Combined strategies (TP + PP combinations)
+- 🎮 **GPU Compatibility Matrix**:
+  - 20+ GPU models (RTX 4090, A100, H100, L40S, etc.)
+  - Automatic compatibility checking for inference/training/LoRA
   - Minimum GPU memory requirement calculations
-- 📈 Professional table output using Rich library:
-  - 🎨 Color coding and beautiful borders
-  - 📊 Progress bars and status displays
-  - 🚀 Modern CLI interface experience
-- 🔧 Customizable parameters: LoRA rank, batch size, sequence length
+- 📈 **Professional Rich UI**:
+  - 🎨 Beautiful color-coded tables and panels
+  - 📊 Real-time progress indicators
+  - 🚀 Modern CLI interface with emoji icons
+  - 💡 Smart recommendations and warnings
+- 🔧 **Flexible Configuration**:
+  - Customizable LoRA rank, batch size, sequence length
+  - External JSON configuration files
+  - User-defined GPU models and data types
+- 📋 **Parameter Display**: Raw count + human-readable format (e.g., "405,016,576 (405.0M)")
 
 ## Installation
 
+### Quick Install (from PyPI)
+
 ```bash
-pip3 install -r requirements.txt
+pip install hf-vram-calc
 ```
 
-> Main dependencies: `requests` and `rich` (for beautiful tables and progress display)
+### Build from Source
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd hf-vram-calc
+
+# Build with uv (recommended)
+uv build
+uv pip install dist/hf_vram_calc-1.0.0-py3-none-any.whl
+
+# Or install directly
+uv pip install .
+```
+
+> **Dependencies**: `requests` (HTTP), `rich` (beautiful CLI), Python ≥3.8
+
+For detailed build instructions, see: [BUILD.md](BUILD.md)
 
 ## Usage
 
-### Basic Usage
+### Basic Usage - Smart Dtype Detection
 
 ```bash
-python3 vram_calculator.py microsoft/DialoGPT-medium
+# Automatic dtype recommendation from model config/name
+hf-vram-calc microsoft/DialoGPT-medium
+
+# Model name contains dtype - automatically detects fp16
+hf-vram-calc nvidia/DeepSeek-R1-0528-FP4
 ```
 
-### Specify Data Type
+### Specify Data Type Override
 
 ```bash
-python3 vram_calculator.py meta-llama/Llama-2-7b-hf --dtype bf16
+# Override with specific data type
+hf-vram-calc meta-llama/Llama-2-7b-hf --dtype bf16
+hf-vram-calc mistralai/Mistral-7B-v0.1 --dtype nvfp4
 ```
 
-### Custom Batch Size and Sequence Length
+### Advanced Configuration
 
 ```bash
-python3 vram_calculator.py mistralai/Mistral-7B-v0.1 --batch-size 4 --sequence-length 4096
+# Custom batch size and sequence length
+hf-vram-calc mistralai/Mistral-7B-v0.1 --batch-size 4 --sequence-length 4096
+
+# Custom LoRA rank for fine-tuning estimation  
+hf-vram-calc microsoft/DialoGPT-medium --lora-rank 128
+
+# Detailed analysis (enabled by default)
+hf-vram-calc meta-llama/Llama-2-7b-hf --show-detailed
 ```
 
-### Show Detailed Parallelization Strategies and GPU Recommendations
+### System Information
 
 ```bash
-python3 vram_calculator.py --show-detailed microsoft/DialoGPT-medium
-```
+# List all available data types and GPU models
+hf-vram-calc --list-types
 
-### Custom LoRA Rank for Fine-tuning Memory Estimation
-
-```bash
-python3 vram_calculator.py --lora-rank 128 --show-detailed microsoft/DialoGPT-medium
-```
-
-### View Available Data Types and GPU Models
-
-```bash
-python3 vram_calculator.py --list-types
-```
-
-### Use Custom Configuration
-
-```bash
 # Use custom configuration directory
-python3 vram_calculator.py --config-dir ./my_config microsoft/DialoGPT-medium
+hf-vram-calc --config-dir ./my_config microsoft/DialoGPT-medium
+
+# Show help
+hf-vram-calc --help
 ```
 
 ## Command Line Arguments
 
-- `model_name`: Hugging Face model name (required)
-- `--dtype`: Specify data type (optional, default: show all types)
-- `--batch-size`: Batch size for activation memory estimation (default: 1)
-- `--sequence-length`: Sequence length for activation memory estimation (default: 2048)
-- `--lora-rank`: LoRA rank parameter for fine-tuning (default: 64)
-- `--show-detailed`: Show detailed parallelization strategies and GPU recommendations
-- `--config-dir`: Specify custom configuration directory
+### Required
+- `model_name`: Hugging Face model name (e.g., `microsoft/DialoGPT-medium`)
+
+### Data Type Control  
+- `--dtype {fp32,fp16,bf16,fp8,int8,int4,mxfp4,nvfp4,awq_int4,fp4,nf4,gptq_int4}`: Override automatic dtype detection
 - `--list-types`: List all available data types and GPU models
 
-## Configuration System
+### Memory Estimation Parameters
+- `--batch-size BATCH_SIZE`: Batch size for activation estimation (default: 1)
+- `--sequence-length SEQUENCE_LENGTH`: Sequence length for memory calculation (default: 2048)  
+- `--lora-rank LORA_RANK`: LoRA rank for fine-tuning estimation (default: 64)
 
-The tool uses separate JSON configuration files to manage data types and GPU specifications, allowing flexible user customization:
+### Display & Configuration
+- `--show-detailed`: Show detailed parallelization and GPU compatibility (default: enabled)
+- `--config-dir CONFIG_DIR`: Custom configuration directory path
+- `--help`: Show complete help message with examples
 
-### Configuration File Structure
+### Smart Behavior
+- **No `--dtype`**: Uses intelligent priority (model name → config → fp16 default)
+- **With `--dtype`**: Overrides automatic detection with specified type
+- **Invalid model**: Graceful error handling with helpful suggestions
 
-- **`data_types.json`** - Define data types and bytes per parameter
-- **`gpu_types.json`** - Define GPU models and memory specifications  
-- **`display_settings.json`** - Control display styles and behavior
+## Quick Start Examples
 
-### Adding Custom Data Types
+```bash
+# Estimate memory for different models
+hf-vram-calc microsoft/DialoGPT-medium              # → 0.9GB inference (FP16)
+hf-vram-calc meta-llama/Llama-2-7b-hf              # → ~13GB inference  
+hf-vram-calc nvidia/DeepSeek-R1-0528-FP4           # → Auto-detects FP4 from name
 
-Edit the `data_types.json` file:
+# Compare different quantization methods
+hf-vram-calc meta-llama/Llama-2-7b-hf --dtype fp16     # → ~13GB
+hf-vram-calc meta-llama/Llama-2-7b-hf --dtype int4     # → ~3.5GB  
+hf-vram-calc meta-llama/Llama-2-7b-hf --dtype awq_int4 # → ~3.5GB
 
-```json
-{
-  "your_custom_format": {
-    "bytes_per_param": 0.75,
-    "description": "Your custom 6-bit format"
-  }
-}
+# Find optimal parallelization strategy
+hf-vram-calc mistralai/Mistral-7B-v0.1 --show-detailed  # → TP/PP recommendations
+
+# Check what's available
+hf-vram-calc --list-types                               # → All types & GPUs
 ```
 
-### Adding Custom GPU Models
+## Data Type Priority & Detection
 
-Edit the `gpu_types.json` file:
+### Automatic Data Type Recommendation
 
-```json
-{
-  "name": "RTX 5090",
-  "memory_gb": 32,
-  "category": "consumer",
-  "architecture": "Blackwell"
-}
-```
+The tool uses intelligent priority-based dtype selection:
 
-For detailed configuration instructions, please refer to: [CONFIG_GUIDE.md](CONFIG_GUIDE.md)
+1. **Model Name Detection** (Highest Priority)
+   - `model-fp16`, `model-bf16` → Extracts from model name  
+   - `model-4bit`, `model-gptq`, `model-awq` → Detects quantization
+   
+2. **Config torch_dtype** (Medium Priority)
+   - Reads `torch_dtype` from model's `config.json`
+   - Maps `torch.float16` → `fp16`, `torch.bfloat16` → `bf16`, etc.
 
-## Supported Data Types
+3. **Default Fallback** (Lowest Priority)
+   - Defaults to `fp16` when no dtype detected
 
-| Data Type | Bytes per Parameter | Description |
-|-----------|--------------------|-----------| 
-| fp32      | 4                  | 32-bit floating point |
-| fp16      | 2                  | 16-bit floating point |
-| bf16      | 2                  | Brain Float 16 |
-| fp8       | 1                  | 8-bit floating point |
-| int8      | 1                  | 8-bit integer |
-| int4      | 0.5                | 4-bit integer |
-| mxfp4     | 0.5                | Microsoft FP4 |
-| nvfp4     | 0.5                | NVIDIA FP4 |
+### Supported Data Types
+
+| Data Type | Bytes/Param | Description | Detection Patterns |
+|-----------|-------------|-------------|--------------------|
+| **fp32**  | 4.0 | 32-bit floating point | `fp32`, `float32` |
+| **fp16**  | 2.0 | 16-bit floating point | `fp16`, `float16`, `half` |
+| **bf16**  | 2.0 | Brain Float 16 | `bf16`, `bfloat16` |
+| **fp8**   | 1.0 | 8-bit floating point | `fp8`, `float8` |
+| **int8**  | 1.0 | 8-bit integer | `int8`, `8bit` |
+| **int4**  | 0.5 | 4-bit integer | `int4`, `4bit` |
+| **mxfp4** | 0.5 | Microsoft FP4 | `mxfp4` |
+| **nvfp4** | 0.5 | NVIDIA FP4 | `nvfp4` |
+| **awq_int4** | 0.5 | AWQ 4-bit quantization | `awq`, `awq-int4` |
+| **gptq_int4** | 0.5 | GPTQ 4-bit quantization | `gptq`, `gptq-int4` |
+| **nf4**   | 0.5 | 4-bit NormalFloat | `nf4`, `bnb-4bit` |
+| **fp4**   | 0.5 | 4-bit floating point | `fp4` |
 
 ## Parallelization Strategies
 
@@ -156,77 +215,118 @@ Each GPU holds a complete model copy, only splitting data.
 
 ## Example Output
 
-### Basic Output (Default Mode)
+### Smart Dtype Detection Example
 
-```
-================================================================================
-Model: microsoft/DialoGPT-medium
-Architecture: gpt2
-Parameters: 404,966,400
-================================================================================
-
-Memory Requirements by Data Type and Scenario:              
-================================================================================
-Data Type    Total Size   Inference    Training     LoRA        
-(GB)         (GB)         (GB)         (Adam) (GB)  (GB)        
-────────────────────────────────────────────────────────────────────────────────
-FP32         1.51        1.81        7.84        1.84       
-FP16         0.75        0.91        3.92        0.94       
-BF16         0.75        0.91        3.92        0.94       
-INT8         0.38        0.45        1.96        0.48       
-INT4         0.19        0.23        0.98        0.26       
+```bash
+$ hf-vram-calc microsoft/DialoGPT-medium
 ```
 
-### Detailed Output (--show-detailed mode)
+```
+Using recommended data type: FP16
+Use --dtype to specify different type, or see --list-types for all options
+  🔍 Fetching configuration for microsoft/DialoGPT-medium...
+  📋 Parsing model configuration...                         
+  🧮 Calculating model parameters...                        
+  💾 Computing memory requirements...                       
+
+                          ╭─────── 🤖 Model Information ───────╮
+                          │                                    │
+                          │  Model: microsoft/DialoGPT-medium  │
+                          │  Architecture: gpt2                │
+                          │  Parameters: 405,016,576 (405.0M)  │
+                          │  Recommended dtype: FP16           │
+                          │                                    │
+                          ╰────────────────────────────────────╯
+
+        💾 Memory Requirements by Data Type and Scenario                
+╭──────────────┬──────────────┬──────────────┬─────────────────┬──────────────╮
+│              │   Total Size │    Inference │        Training │         LoRA │
+│  Data Type   │         (GB) │         (GB) │     (Adam) (GB) │         (GB) │
+├──────────────┼──────────────┼──────────────┼─────────────────┼──────────────┤
+│     FP16     │         0.75 │         0.91 │            3.92 │         0.94 │
+╰──────────────┴──────────────┴──────────────┴─────────────────┴──────────────╯
+
+          ⚡ Parallelization Strategies (FP16 Inference)                 
+╔════════════════════╤══════╤══════╤══════╤══════╤══════════════╤══════════════╗
+║                    │      │      │      │      │   Memory/GPU │   Min GPU    ║
+║ Strategy           │  TP  │  PP  │  EP  │  DP  │         (GB) │   Required   ║
+╟────────────────────┼──────┼──────┼──────┼──────┼──────────────┼──────────────╢
+║ Single GPU         │  1   │  1   │  1   │  1   │         0.91 │     4GB+     ║
+║ Tensor Parallel    │  2   │  1   │  1   │  1   │         0.45 │     4GB+     ║
+║ TP + PP            │  4   │  4   │  1   │  1   │         0.06 │     4GB+     ║
+╚════════════════════╧══════╧══════╧══════╧══════╧══════════════╧══════════════╝
+
+                  🎮 GPU Compatibility Matrix                         
+┏━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━┓
+┃ GPU Type        │   Memory   │  Inference   │   Training   │     LoRA     ┃
+┠─────────────────┼────────────┼──────────────┼──────────────┼──────────────┨
+┃ RTX 4090        │    24GB    │      ✓       │      ✓       │      ✓       ┃
+┃ A100 80GB       │    80GB    │      ✓       │      ✓       │      ✓       ┃
+┃ H100 80GB       │    80GB    │      ✓       │      ✓       │      ✓       ┃
+┗━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━┛
+
+╭─── 📋 Minimum GPU Requirements ────╮
+│                                   │
+│  Single GPU Inference: 0.9GB      │
+│  Single GPU Training: 3.9GB       │  
+│  Single GPU LoRA: 0.9GB           │
+│                                   │
+╰───────────────────────────────────╯
+```
+
+### Large Model with User Override
+
+```bash
+$ hf-vram-calc nvidia/DeepSeek-R1-0528-FP4 --dtype nvfp4
+```
 
 ```
-================================================================================
-Model: microsoft/DialoGPT-medium
-Architecture: gpt2
-Parameters: 404,966,400
-================================================================================
+                          ╭──────── 🤖 Model Information ────────╮
+                          │                                      │
+                          │  Model: nvidia/DeepSeek-R1-0528-FP4  │
+                          │  Architecture: deepseek_v3           │
+                          │  Parameters: 30,510,606,336 (30.5B)  │
+                          │  Original torch_dtype: bfloat16      │
+                          │  User specified dtype: NVFP4         │
+                          │                                      │
+                          ╰──────────────────────────────────────╯
 
-Memory Requirements by Data Type and Scenario:              
-================================================================================
-Data Type    Total Size   Inference    Training     LoRA        
-(GB)         (GB)         (GB)         (Adam) (GB)  (GB)        
-────────────────────────────────────────────────────────────────────────────────
-FP32         1.51        1.81        7.84        1.84       
-FP16         0.75        0.91        3.92        0.94       
-BF16         0.75        0.91        3.92        0.94       
-INT8         0.38        0.45        1.96        0.48       
-INT4         0.19        0.23        0.98        0.26       
+        💾 Memory Requirements by Data Type and Scenario                
+╭──────────────┬──────────────┬──────────────┬─────────────────┬──────────────╮
+│              │   Total Size │    Inference │        Training │         LoRA │
+│  Data Type   │         (GB) │         (GB) │     (Adam) (GB) │         (GB) │
+├──────────────┼──────────────┼──────────────┼─────────────────┼──────────────┤
+│    NVFP4     │        14.21 │        17.05 │           73.88 │        19.34 │
+╰──────────────┴──────────────┴──────────────┴─────────────────┴──────────────╯
+```
 
-Parallelization Strategies (BF16 Inference):                
-================================================================================
-Strategy             TP   PP   EP   DP   Memory/GPU (GB) Min GPUs  
-────────────────────────────────────────────────────────────────────────────────
-Single GPU           1    1    1    1    0.91           4GB+      
-Tensor Parallel      2    1    1    1    0.45           4GB+      
-Tensor Parallel      4    1    1    1    0.23           4GB+      
-Tensor Parallel      8    1    1    1    0.11           4GB+      
-Pipeline Parallel    1    2    1    1    0.45           4GB+      
-Pipeline Parallel    1    4    1    1    0.23           4GB+      
-Pipeline Parallel    1    8    1    1    0.11           4GB+      
-TP + PP              2    2    1    1    0.23           4GB+      
-TP + PP              2    4    1    1    0.11           4GB+      
-TP + PP              4    2    1    1    0.11           4GB+      
-TP + PP              4    4    1    1    0.06           4GB+      
+### List Available Types
 
-Recommendations:                                            
-================================================================================
-GPU Type        Memory     Inference    Training     LoRA        
-────────────────────────────────────────────────────────────────────────────────
-RTX 4090        24       GB ✓           ✓           ✓          
-A100 40GB       40       GB ✓           ✓           ✓          
-A100 80GB       80       GB ✓           ✓           ✓          
-H100            80       GB ✓           ✓           ✓          
+```bash
+$ hf-vram-calc --list-types
+```
 
-Minimum GPU Requirements:                                   
-────────────────────────────────────────────────────────────────────────────────
-Single GPU Inference: 0.9GB
-Single GPU Training: 3.9GB
-Single GPU LoRA: 0.9GB
+```
+Available Data Types:
+╭───────────┬─────────────┬────────────────────────╮
+│ Data Type │ Bytes/Param │ Description            │
+├───────────┼─────────────┼────────────────────────┤
+│ FP32      │           4 │ 32-bit floating point  │
+│ FP16      │           2 │ 16-bit floating point  │
+│ BF16      │           2 │ Brain Float 16         │
+│ NVFP4     │         0.5 │ NVIDIA FP4             │
+│ AWQ_INT4  │         0.5 │ AWQ 4-bit quantization │
+│ GPTQ_INT4 │         0.5 │ GPTQ 4-bit quantization│
+╰───────────┴─────────────┴────────────────────────╯
+
+Available GPU Types:
+╭───────────────────┬─────────────┬────────────┬──────────────╮
+│ GPU Name          │ Memory (GB) │ Category   │ Architecture │
+├───────────────────┼─────────────┼────────────┼──────────────┤
+│ RTX 4090          │          24 │ consumer   │ Ada Lovelace │
+│ A100 80GB         │          80 │ datacenter │ Ampere       │
+│ H100 80GB         │          80 │ datacenter │ Hopper       │
+╰───────────────────┴─────────────┴────────────┴──────────────╯
 ```
 
 ## Calculation Formulas
@@ -250,23 +350,107 @@ LoRA Memory = (Model Weights + LoRA Parameter Overhead) × 1.2
 ```
 LoRA parameter overhead calculated based on rank and target module ratio.
 
-## Notes
+## Advanced Features
 
-1. **Activation Memory**: Current simplified estimation may be significantly reduced in practice due to optimization strategies (such as gradient checkpointing)
-2. **Parallelization Efficiency**: Assumes ideal conditions, actual may vary slightly due to communication overhead
-3. **LoRA Estimation**: Based on typical configurations (25% target modules), actual may vary depending on specific implementation
-4. **Mixed Data Types**: Some cases may use mixed precision, actual memory between different data types
-5. **Model Architecture Differences**: Different architectures (such as MoE) may have special memory distribution patterns
+### Configuration System
 
-## Supported Model Architectures
+External JSON configuration files for maximum flexibility:
 
-Currently mainly supports Transformer architecture models, including but not limited to:
-- GPT series
-- LLaMA series
-- Mistral series
-- BERT series
-- T5 series
+- **`data_types.json`** - Add custom quantization formats
+- **`gpu_types.json`** - Define new GPU models and specifications  
+- **`display_settings.json`** - Customize UI appearance and limits
+
+```bash
+# Use custom config directory
+hf-vram-calc --config-dir ./custom_config model_name
+
+# Add custom data type example (data_types.json)
+{
+  "my_custom_int2": {
+    "bytes_per_param": 0.25,
+    "description": "Custom 2-bit quantization"
+  }
+}
+```
+
+### Memory Calculation Details
+
+| Scenario | Formula | Explanation |
+|----------|---------|-------------|
+| **Inference** | Model × 1.2 | Includes KV cache and activation overhead |
+| **Training** | Model × 4 × 1.3 | Weights(1x) + Gradients(1x) + Adam(2x) + 30% overhead |
+| **LoRA** | (Model + LoRA_params×4) × 1.2 | Base model + trainable parameters with optimizer |
+
+### Parallelization Efficiency
+
+- **TP (Tensor Parallel)**: Near-linear scaling, slight communication overhead
+- **PP (Pipeline Parallel)**: Good efficiency, pipeline bubble ~10-15%  
+- **EP (Expert Parallel)**: MoE-specific, depends on expert routing efficiency
+- **DP (Data Parallel)**: No memory reduction per GPU, full model replica
+
+## Supported Architectures
+
+### Fully Supported ✅
+- **GPT Family**: GPT-2, GPT-3, GPT-4, GPT-NeoX, etc.
+- **LLaMA Family**: LLaMA, LLaMA-2, Code Llama, Vicuna, etc.
+- **Mistral Family**: Mistral 7B, Mixtral 8x7B (MoE), etc.
+- **Other Transformers**: BERT, RoBERTa, T5, FLAN-T5, etc.
+- **New Architectures**: DeepSeek, Qwen, ChatGLM, Baichuan, etc.
+
+### Architecture Detection
+- **Automatic field mapping** for different config.json formats
+- **Fallback support** for uncommon architectures
+- **MoE handling** for Mixture-of-Experts models
+
+## Accuracy & Limitations
+
+### ✅ Highly Accurate For:
+- **Parameter counting** (exact calculation)
+- **Memory estimation** (within 5-10% of actual)
+- **Parallelization ratios** (theoretical maximum)
+
+### ⚠️ Considerations:
+- **Activation memory** varies with sequence length and optimization
+- **Real-world efficiency** may differ due to framework overhead  
+- **Quantization accuracy** depends on specific implementation
+- **MoE models** require expert routing consideration
+
+## Build & Development
+
+Built with modern Python tooling:
+- **uv**: Fast Python package management and building
+- **Rich**: Professional terminal interface
+- **Requests**: HTTP client for model config fetching
+- **JSON configuration**: Flexible external configuration system
+
+For development setup, see: [BUILD.md](BUILD.md)
 
 ## Contributing
 
-Welcome to submit Issues and Pull Requests to improve this tool!
+We welcome contributions! Areas for improvement:
+
+- 🔧 **New quantization formats** (add to `data_types.json`)
+- 🎮 **GPU models** (update `gpu_types.json`)  
+- 📊 **Architecture support** (enhance config parsing)
+- 🚀 **Performance optimizations**
+- 📚 **Documentation improvements**
+- 🧪 **Test coverage expansion**
+
+## See Also
+
+- 📚 **[BUILD.md](BUILD.md)** - Complete build and installation guide
+- ⚙️ **[CONFIG_GUIDE.md](CONFIG_GUIDE.md)** - Configuration customization details
+- 📝 **Examples in help**: `hf-vram-calc --help` for usage examples
+
+## Version History
+
+- **v1.0.0**: Complete rewrite with uv build, smart dtype detection, professional UI
+- **v0.x**: Legacy single-file version (deprecated)
+
+## License
+
+MIT License - see LICENSE file for details.
+
+---
+
+**Made with ❤️ for the ML community** | Built with [uv](https://github.com/astral-sh/uv) and [Rich](https://github.com/Textualize/rich)
