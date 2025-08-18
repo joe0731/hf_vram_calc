@@ -278,6 +278,9 @@ Use --dtype to specify different type, or see --list-types for all options
 
 ```bash
 $ hf-vram-calc nvidia/DeepSeek-R1-0528-FP4 --dtype nvfp4
+
+$ hf-vram-calc Qwen/Qwen-72B-Chat 
+
 ```
 
 ```
