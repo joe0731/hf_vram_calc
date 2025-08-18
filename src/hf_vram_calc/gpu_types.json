@@ -1,4 +1,59 @@
 [
+
+  {
+    "name": "RTX 5090",
+    "memory_gb": 32,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5090D",
+    "memory_gb": 32,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5080",
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5070 Ti",
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5070",
+    "memory_gb": 12,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5060 Ti 16GB",
+    "memory_gb": 16,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5060 Ti 8GB",
+    "memory_gb": 8,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5060",
+    "memory_gb": 8,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "RTX 5050",
+    "memory_gb": 8,
+    "category": "consumer",
+    "architecture": "Blackwell"
+  },
   {
     "name": "RTX 4090",
     "memory_gb": 24,
@@ -84,16 +139,40 @@
     "architecture": "Hopper"
   },
   {
-    "name": "H100 94GB",
-    "memory_gb": 94,
+    "name": "H200 141GB",
+    "memory_gb": 141,
     "category": "datacenter",
     "architecture": "Hopper"
   },
   {
-    "name": "A40",
-    "memory_gb": 48,
+    "name": "H20 96GB",
+    "memory_gb": 96,
     "category": "datacenter",
-    "architecture": "Ampere"
+    "architecture": "Hopper"
+  },
+  {
+    "name": "B100 192GB",
+    "memory_gb": 192,
+    "category": "datacenter",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "B200 192GB",
+    "memory_gb": 192,
+    "category": "datacenter",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "B300 288B",
+    "memory_gb": 288,
+    "category": "datacenter",
+    "architecture": "Blackwell"
+  },
+  {
+    "name": "GB300 288B",
+    "memory_gb": 288,
+    "category": "datacenter",
+    "architecture": "Blackwell"
   },
   {
     "name": "A30",
@@ -110,12 +189,6 @@
   {
     "name": "V100 32GB",
     "memory_gb": 32,
-    "category": "datacenter",
-    "architecture": "Volta"
-  },
-  {
-    "name": "V100 16GB",
-    "memory_gb": 16,
     "category": "datacenter",
     "architecture": "Volta"
   },
@@ -142,5 +215,17 @@
     "memory_gb": 24,
     "category": "datacenter",
     "architecture": "Ada Lovelace"
+  },
+  {
+    "name": "NVIDIA RTX PRO 6000 BLACKWELL",
+    "memory_gb": 96,
+    "category": "workstation",
+    "architecture": "Hopper"
+  },
+  {
+    "name": "NVIDIA RTX PRO 5000 BLACKWELL",
+    "memory_gb": 48,
+    "category": "workstation",
+    "architecture": "Hopper"
   }
 ]

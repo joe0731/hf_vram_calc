@@ -19,3 +19,5 @@ class ModelConfig:
     max_position_embeddings: Optional[int] = None
     rope_theta: Optional[float] = None
     model_type: str = "unknown"
+    torch_dtype: Optional[str] = None
+    recommended_dtype: Optional[str] = None

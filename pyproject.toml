@@ -1,9 +1,9 @@
 [build-system]
-requires = ["hatchling==1.26.3", "hatch-vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "model_vram_calc"
+name = "hf-vram-calc"
 version = "1.0.0"
 description = "GPU memory calculator for Hugging Face models with different data types and parallelization strategies"
 readme = "README.md"

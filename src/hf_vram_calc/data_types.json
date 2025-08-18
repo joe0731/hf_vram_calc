@@ -34,9 +34,5 @@
   "awq_int4": {
     "bytes_per_param": 0.5,
     "description": "AWQ 4-bit quantization"
-  },
-  "fp4": {
-    "bytes_per_param": 0.5,
-    "description": "4-bit floating point"
   }
 }

@@ -31,7 +31,27 @@ def format_memory_size(memory_gb: float) -> str:
         return f"{memory_gb:.2f} GB"
 
 
-def print_memory_table(results: Dict, num_params: int):
+def format_parameters(num_params: int) -> str:
+    """Format parameter count with B (Billions) unit"""
+    if num_params >= 1_000_000_000:
+        billions = num_params / 1_000_000_000
+        if billions >= 100:
+            return f"{billions:.0f}B"  # 100B+ no decimal
+        elif billions >= 10:
+            return f"{billions:.1f}B"  # 10.5B one decimal
+        else:
+            return f"{billions:.2f}B"  # 2.34B two decimals
+    elif num_params >= 1_000_000:
+        millions = num_params / 1_000_000
+        return f"{millions:.1f}M"
+    elif num_params >= 1_000:
+        thousands = num_params / 1_000
+        return f"{thousands:.1f}K"
+    else:
+        return str(num_params)
+
+
+def print_memory_table(results: Dict, num_params: int, vram_calc: VRAMCalculator):
     """Print memory requirements table by data type and scenario"""
     console.print()
     
@@ -54,10 +74,10 @@ def print_memory_table(results: Dict, num_params: int):
     # Add rows - display all available data types from results
     for dtype in sorted(results['memory_by_dtype'].keys()):
         base_memory = results['memory_by_dtype'][dtype]
-        inference_memory = VRAMCalculator.calculate_inference_memory(base_memory)
-        training_memory = VRAMCalculator.calculate_training_memory(base_memory)
+        inference_memory = vram_calc.calculate_inference_memory(base_memory)
+        training_memory = vram_calc.calculate_training_memory(base_memory)
         lora_rank = results.get("lora_rank", 64)
-        lora_memory = VRAMCalculator.calculate_lora_memory(base_memory, num_params, lora_rank)
+        lora_memory = vram_calc.calculate_lora_memory(base_memory, num_params, lora_rank)
         
         # Format numbers with appropriate colors
         base_str = f"{base_memory:.2f}"
@@ -76,7 +96,7 @@ def print_memory_table(results: Dict, num_params: int):
     console.print(table)
 
 
-def print_parallelization_table(results: Dict):
+def print_parallelization_table(results: Dict, vram_calc: VRAMCalculator):
     """Print parallelization strategies table"""
     console.print()
     
@@ -96,7 +116,7 @@ def print_parallelization_table(results: Dict):
         preferred_dtype = available_dtypes[0]
     
     base_memory = results['memory_by_dtype'][preferred_dtype]
-    inference_memory = VRAMCalculator.calculate_inference_memory(base_memory)
+    inference_memory = vram_calc.calculate_inference_memory(base_memory)
     
     # Create beautiful parallelization table
     table = Table(
@@ -175,7 +195,7 @@ def print_parallelization_table(results: Dict):
     console.print(table)
 
 
-def print_detailed_recommendations(results: Dict, config: ModelConfig):
+def print_detailed_recommendations(results: Dict, config: ModelConfig, vram_calc: VRAMCalculator):
     """Print detailed recommendations"""
     # Use the first available data type for recommendations
     available_dtypes = list(results['memory_by_dtype'].keys())
@@ -193,10 +213,10 @@ def print_detailed_recommendations(results: Dict, config: ModelConfig):
         preferred_dtype = available_dtypes[0]
     
     base_memory = results['memory_by_dtype'][preferred_dtype]
-    inference_memory = VRAMCalculator.calculate_inference_memory(base_memory)
-    training_memory = VRAMCalculator.calculate_training_memory(base_memory)
+    inference_memory = vram_calc.calculate_inference_memory(base_memory)
+    training_memory = vram_calc.calculate_training_memory(base_memory)
     num_params = ParameterCalculator.calculate_transformer_params(config)
-    lora_memory = VRAMCalculator.calculate_lora_memory(base_memory, num_params)
+    lora_memory = vram_calc.calculate_lora_memory(base_memory, num_params)
     
     console.print()
     
@@ -219,7 +239,8 @@ def print_detailed_recommendations(results: Dict, config: ModelConfig):
     config_manager = ConfigManager()
     gpu_recommendations = config_manager.get_gpu_types()
     display_settings = config_manager.get_display_settings()
-    max_display = display_settings.get("max_gpu_display", 8)
+    # remove max display limit to show all GPUs
+    max_display = len(gpu_recommendations)
     
     # Limit number of GPUs displayed
     displayed_gpus = gpu_recommendations[:max_display]
@@ -261,16 +282,28 @@ def print_detailed_recommendations(results: Dict, config: ModelConfig):
     console.print(requirements_panel)
 
 
-def print_model_header(config: ModelConfig, num_params: int):
+def print_model_header(config: ModelConfig, num_params: int, user_specified_dtype: str = None):
     """Print beautiful model information header"""
     console.print()
     
-    # Create model info panel
+    # Format parameters in both raw and human-readable format
+    params_formatted = format_parameters(num_params)
+    
+    # Create model info panel with dtype info
     model_info = f"""
 [bold]Model:[/bold] [cyan]{config.model_name}[/cyan]
 [bold]Architecture:[/bold] [magenta]{config.model_type}[/magenta]
-[bold]Parameters:[/bold] [green]{num_params:,}[/green]
-    """
+[bold]Parameters:[/bold] [green]{num_params:,}[/green] [dim]({params_formatted})[/dim]"""
+    
+    # Add torch_dtype info if available
+    if config.torch_dtype:
+        model_info += f"\n[bold]Original torch_dtype:[/bold] [yellow]{config.torch_dtype}[/yellow]"
+    
+    # Show user specified dtype or recommended dtype
+    if user_specified_dtype:
+        model_info += f"\n[bold]User specified dtype:[/bold] [bright_blue]{user_specified_dtype.upper()}[/bright_blue]"
+    elif config.recommended_dtype:
+        model_info += f"\n[bold]Recommended dtype:[/bold] [bright_green]{config.recommended_dtype.upper()}[/bright_green]"
     
     header_panel = Panel(
         model_info.strip(),
@@ -283,19 +316,19 @@ def print_model_header(config: ModelConfig, num_params: int):
     console.print(Align.center(header_panel))
 
 
-def print_results(config: ModelConfig, num_params: int, results: Dict):
+def print_results(config: ModelConfig, num_params: int, results: Dict, vram_calc: VRAMCalculator, user_specified_dtype: str = None):
     """Print comprehensive formatted results"""
     # Print model header
-    print_model_header(config, num_params)
+    print_model_header(config, num_params, user_specified_dtype)
     
     # Print main memory table
-    print_memory_table(results, num_params)
+    print_memory_table(results, num_params, vram_calc)
     
     # Print parallelization table
-    print_parallelization_table(results)
+    print_parallelization_table(results, vram_calc)
     
     # Print detailed recommendations
-    print_detailed_recommendations(results, config)
+    print_detailed_recommendations(results, config, vram_calc)
 
 
 def main():
@@ -418,7 +451,36 @@ Examples:
             results = {"memory_by_dtype": {}}
             
             available_dtypes = list(config_manager.get_data_types().keys())
-            dtypes_to_calculate = [args.dtype] if args.dtype else available_dtypes
+            
+            # Determine which data types to calculate
+            if args.dtype:
+                # User specified a specific dtype
+                dtypes_to_calculate = [args.dtype]
+            else:
+                # No dtype specified - use recommended dtype if available, otherwise smart fallback
+                if config.recommended_dtype and config.recommended_dtype in available_dtypes:
+                    # Use recommended dtype only
+                    dtypes_to_calculate = [config.recommended_dtype]
+                    console.print(f"[dim]Using recommended data type: {config.recommended_dtype.upper()}[/dim]")
+                    console.print(f"[dim]Use --dtype to specify different type, or see --list-types for all options[/dim]")
+                else:
+                    # Recommended dtype not available - smart fallback to fp16/bf16/fp32
+                    fallback_dtype = None
+                    for preferred in ['fp16', 'bf16', 'fp32']:
+                        if preferred in available_dtypes:
+                            fallback_dtype = preferred
+                            break
+                    
+                    if fallback_dtype:
+                        dtypes_to_calculate = [fallback_dtype]
+                        if config.recommended_dtype:
+                            console.print(f"[yellow]⚠️  Recommended dtype '{config.recommended_dtype}' not available[/yellow]")
+                        console.print(f"[dim]Using default data type: {fallback_dtype.upper()} (fp16/bf16 preferred)[/dim]")
+                        console.print(f"[dim]Use --dtype to specify different type, or see --list-types for all options[/dim]")
+                    else:
+                        # No preferred types available, show all types
+                        dtypes_to_calculate = available_dtypes
+                        console.print(f"[yellow]⚠️  No preferred data types (fp16/bf16/fp32) available, showing all types[/yellow]")
             
             for dtype in dtypes_to_calculate:
                 memory_gb = vram_calc.calculate_model_memory(num_params, dtype)
@@ -430,11 +492,11 @@ Examples:
         
         # Print results
         if args.show_detailed:
-            print_results(config, num_params, results)
+            print_results(config, num_params, results, vram_calc, args.dtype)
         else:
             # Simplified output - just the header and main table
-            print_model_header(config, num_params)
-            print_memory_table(results, num_params)
+            print_model_header(config, num_params, args.dtype)
+            print_memory_table(results, num_params, vram_calc)
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
