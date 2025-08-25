@@ -346,6 +346,7 @@ Examples:
   hf-vram-calc meta-llama/Llama-2-7b-hf
   hf-vram-calc mistralai/Mistral-7B-v0.1
   hf-vram-calc --list-types  # show available data types and GPUs
+  hf-vram-calc my-model --local-config /path/to/config.json  # use local config file
         """
     )
     
@@ -403,6 +404,13 @@ Examples:
         help="list all available data types and GPU types"
     )
     
+    parser.add_argument(
+        "--local-config",
+        type=str,
+        default=None,
+        help="path to local config.json file instead of fetching from Hugging Face"
+    )
+    
     args = parser.parse_args()
     
     try:
@@ -433,7 +441,7 @@ Examples:
             
             # Fetch and parse config
             task1 = progress.add_task(f"🔍 Fetching configuration for {args.model_name}...", total=100)
-            config_data = ConfigParser.fetch_config(args.model_name)
+            config_data = ConfigParser.fetch_config(args.model_name, args.local_config)
             progress.update(task1, completed=100)
             
             # Parse config

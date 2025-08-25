@@ -2,7 +2,9 @@
 Configuration parser for Hugging Face models.
 """
 
+import json
 import requests
+from pathlib import Path
 from typing import Dict, Optional
 
 from .models import ModelConfig
@@ -78,15 +80,33 @@ class ConfigParser:
         return "fp16"
     
     @staticmethod
-    def fetch_config(model_name: str) -> Dict:
-        """Fetch config.json from Hugging Face"""
+    def fetch_config(model_name: str, local_config_path: Optional[str] = None) -> Dict:
+        """Fetch config.json from local file or Hugging Face"""
+        # Use local config if provided
+        if local_config_path:
+            try:
+                config_path = Path(local_config_path)
+                if not config_path.exists():
+                    raise FileNotFoundError(f"local config file not found: {local_config_path}")
+                
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError) as e:
+                raise RuntimeError(f"failed to load local config from '{local_config_path}': {e}.\n"
+                                 f"please check if your config json file format is correct and complete")
+        
+        # Fetch from Hugging Face if no local config specified
         try:
             url = f"https://huggingface.co/{model_name}/raw/main/config.json"
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise RuntimeError(f"failed to fetch config for {model_name}: {e}")
+            error_msg = (
+                f"failed to fetch config for model '{model_name}': {e}. "
+                "Please check network connection or try using --local-config option"
+            )
+            raise RuntimeError(error_msg)
     
     @staticmethod
     def parse_config(config_data: Dict, model_name: str) -> ModelConfig:
