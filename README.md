@@ -153,10 +153,13 @@ hf-vram-calc microsoft/DialoGPT-medium              # → 0.9GB inference (FP16)
 hf-vram-calc meta-llama/Llama-2-7b-hf              # → ~13GB inference  
 hf-vram-calc nvidia/DeepSeek-R1-0528-FP4           # → Auto-detects FP4 from name
 
-# Compare different quantization methods
+# estimate size for specified quantization versions
 hf-vram-calc meta-llama/Llama-2-7b-hf --dtype fp16     # → ~13GB
 hf-vram-calc meta-llama/Llama-2-7b-hf --dtype int4     # → ~3.5GB  
 hf-vram-calc meta-llama/Llama-2-7b-hf --dtype awq_int4 # → ~3.5GB
+
+# for private access models, it is recommended to use --local-config
+hf-vram-calc meta-llama/Llama-4-Scout-17B-16E-Instruct --local-config config.json
 
 # Find optimal parallelization strategy
 hf-vram-calc mistralai/Mistral-7B-v0.1 --show-detailed  # → TP/PP recommendations
