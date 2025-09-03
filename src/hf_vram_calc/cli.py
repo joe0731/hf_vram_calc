@@ -15,7 +15,7 @@ from rich import box
 
 from .config import ConfigManager
 from .parser import ConfigParser
-from .calculator import VRAMCalculator, ParameterCalculator
+from .calculator import VRAMCalculator, ParameterCalculator, LlmodelMemoryResult
 from .parallel import ParallelizationCalculator
 from .models import ModelConfig
 
@@ -51,13 +51,13 @@ def format_parameters(num_params: int) -> str:
         return str(num_params)
 
 
-def print_memory_table(results: Dict, num_params: int, vram_calc: VRAMCalculator):
+def print_memory_table(memory_results: list[LlmodelMemoryResult], batch_size: int = 1, sequence_length: int = 2048):
     """Print memory requirements table by data type and scenario"""
     console.print()
     
     # Create beautiful table
     table = Table(
-        title="💾 Memory Requirements by Data Type and Scenario",
+        title=f"💾 Memory Requirements by Data Type and Scenario (Batch Size: {batch_size}, Sequence Length: {sequence_length})",
         box=box.ROUNDED,
         header_style="bold magenta",
         title_style="bold blue",
@@ -66,28 +66,25 @@ def print_memory_table(results: Dict, num_params: int, vram_calc: VRAMCalculator
     
     # Add columns
     table.add_column("Data Type", justify="center", style="cyan", width=12)
-    table.add_column("Total Size\n(GB)", justify="right", style="green", width=12)
-    table.add_column("Inference\n(GB)", justify="right", style="yellow", width=12)
+    table.add_column("Model Size\n(GB)", justify="right", style="green", width=12)
+    table.add_column("KV Cache\n(GB)", justify="right", style="magenta", width=15)
+    table.add_column("Inference\nTotal (GB)", justify="right", style="yellow", width=15)
     table.add_column("Training\n(Adam) (GB)", justify="right", style="red", width=15)
     table.add_column("LoRA\n(GB)", justify="right", style="blue", width=12)
     
-    # Add rows - display all available data types from results
-    for dtype in sorted(results['memory_by_dtype'].keys()):
-        base_memory = results['memory_by_dtype'][dtype]
-        inference_memory = vram_calc.calculate_inference_memory(base_memory)
-        training_memory = vram_calc.calculate_training_memory(base_memory)
-        lora_rank = results.get("lora_rank", 64)
-        lora_memory = vram_calc.calculate_lora_memory(base_memory, num_params, lora_rank)
-        
+    # Add rows - display all memory results
+    for memory_result in sorted(memory_results, key=lambda x: x.dtype):
         # Format numbers with appropriate colors
-        base_str = f"{base_memory:.2f}"
-        inference_str = f"{inference_memory:.2f}"
-        training_str = f"{training_memory:.2f}"
-        lora_str = f"{lora_memory:.2f}"
+        model_str = f"{memory_result.base_memory:.2f}"
+        kv_cache_str = f"{memory_result.kv_cache_memory:.2f}"
+        inference_str = f"{memory_result.inference_memory:.2f}"
+        training_str = f"{memory_result.training_memory:.2f}"
+        lora_str = f"{memory_result.lora_memory:.2f}"
         
         table.add_row(
-            dtype.upper(),
-            base_str,
+            memory_result.dtype.upper(),
+            model_str,
+            kv_cache_str,
             inference_str,
             training_str,
             lora_str
@@ -96,31 +93,29 @@ def print_memory_table(results: Dict, num_params: int, vram_calc: VRAMCalculator
     console.print(table)
 
 
-def print_parallelization_table(results: Dict, vram_calc: VRAMCalculator):
+def print_parallelization_table(memory_results: list[LlmodelMemoryResult]):
     """Print parallelization strategies table"""
     console.print()
     
-    # Use the first available data type for parallelization calculations
-    available_dtypes = list(results['memory_by_dtype'].keys())
-    if not available_dtypes:
+    if not memory_results:
         return
     
     # Prefer bf16 or fp16, otherwise use the first available
-    preferred_dtype = None
-    for dtype in ['bf16', 'fp16', 'fp32']:
-        if dtype in available_dtypes:
-            preferred_dtype = dtype
+    preferred_result = None
+    for result in memory_results:
+        if result.dtype in ['bf16', 'fp16', 'fp32']:
+            preferred_result = result
             break
     
-    if preferred_dtype is None:
-        preferred_dtype = available_dtypes[0]
+    if preferred_result is None:
+        preferred_result = memory_results[0]
     
-    base_memory = results['memory_by_dtype'][preferred_dtype]
-    inference_memory = vram_calc.calculate_inference_memory(base_memory)
+    # Use the total inference memory (model + overhead, not including KV cache for parallelization)
+    inference_memory = preferred_result.inference_memory
     
     # Create beautiful parallelization table
     table = Table(
-        title=f"⚡ Parallelization Strategies ({preferred_dtype.upper()} Inference)",
+        title=f"⚡ Parallelization Strategies ({preferred_result.dtype.upper()} Inference)",
         box=box.DOUBLE_EDGE,
         header_style="bold cyan",
         title_style="bold green",
@@ -195,28 +190,25 @@ def print_parallelization_table(results: Dict, vram_calc: VRAMCalculator):
     console.print(table)
 
 
-def print_detailed_recommendations(results: Dict, config: ModelConfig, vram_calc: VRAMCalculator):
+def print_detailed_recommendations(memory_results: list[LlmodelMemoryResult]):
     """Print detailed recommendations"""
-    # Use the first available data type for recommendations
-    available_dtypes = list(results['memory_by_dtype'].keys())
-    if not available_dtypes:
+    if not memory_results:
         return
     
     # Prefer bf16 or fp16, otherwise use the first available
-    preferred_dtype = None
-    for dtype in ['bf16', 'fp16', 'fp32']:
-        if dtype in available_dtypes:
-            preferred_dtype = dtype
+    preferred_result = None
+    for result in memory_results:
+        if result.dtype in ['bf16', 'fp16', 'fp32']:
+            preferred_result = result
             break
     
-    if preferred_dtype is None:
-        preferred_dtype = available_dtypes[0]
+    if preferred_result is None:
+        preferred_result = memory_results[0]
     
-    base_memory = results['memory_by_dtype'][preferred_dtype]
-    inference_memory = vram_calc.calculate_inference_memory(base_memory)
-    training_memory = vram_calc.calculate_training_memory(base_memory)
-    num_params = ParameterCalculator.calculate_transformer_params(config)
-    lora_memory = vram_calc.calculate_lora_memory(base_memory, num_params)
+    # Use stored values from MemoryResult
+    inference_memory = preferred_result.inference_memory
+    training_memory = preferred_result.training_memory
+    lora_memory = preferred_result.lora_memory
     
     console.print()
     
@@ -316,19 +308,29 @@ def print_model_header(config: ModelConfig, num_params: int, user_specified_dtyp
     console.print(Align.center(header_panel))
 
 
-def print_results(config: ModelConfig, num_params: int, results: Dict, vram_calc: VRAMCalculator, user_specified_dtype: str = None):
+def print_results(config: ModelConfig, memory_results: list[LlmodelMemoryResult], verbose: bool = True):
     """Print comprehensive formatted results"""
+    if not memory_results:
+        return
+    # Use the first result for num_params (all should have the same value)
+    num_params = memory_results[0].num_params
     # Print model header
-    print_model_header(config, num_params, user_specified_dtype)
-    
+    all_dtypes = ",".join([result.dtype.upper() for result in memory_results])
+    print_model_header(config, num_params, all_dtypes)
     # Print main memory table
-    print_memory_table(results, num_params, vram_calc)
-    
-    # Print parallelization table
-    print_parallelization_table(results, vram_calc)
-    
-    # Print detailed recommendations
-    print_detailed_recommendations(results, config, vram_calc)
+    print_memory_table(memory_results, memory_results[0].batch_size, memory_results[0].sequence_length)
+
+    # Only print detailed info if verbose is True
+    if verbose:
+        # Print detailed info for each dtype
+        for memory_result in memory_results:
+            # Add separator line between dtypes (except for the first one)
+            console.print("\n" + "="*80 + "\n")
+            # Print parallelization table for this dtype
+            print_parallelization_table([memory_result])
+
+            # Print detailed recommendations for this dtype
+            print_detailed_recommendations([memory_result])
 
 
 def main():
@@ -358,9 +360,9 @@ Examples:
     
     parser.add_argument(
         "--dtype",
-        choices=available_dtypes,
+        type=str,
         default=None,
-        help="specific data type to calculate (default: show all)"
+        help="specific data type(s) to calculate (comma-separated for multiple, e.g., fp16,bf16, default: use recommended dtype)"
     )
     
     parser.add_argument(
@@ -385,9 +387,9 @@ Examples:
     )
     
     parser.add_argument(
-        "--show-detailed",
+        "--verbose",
         action="store_true",
-        default=True,
+        default=False,
         help="show detailed parallelization strategies and recommendations"
     )
     
@@ -456,14 +458,25 @@ Examples:
             
             # Calculate memory requirements
             task4 = progress.add_task("💾 Computing memory requirements...", total=100)
-            results = {"memory_by_dtype": {}}
             
             available_dtypes = list(config_manager.get_data_types().keys())
             
             # Determine which data types to calculate
             if args.dtype:
-                # User specified a specific dtype
-                dtypes_to_calculate = [args.dtype]
+                # User specified dtype(s) - support both single dtype and comma-separated list
+                if ',' in args.dtype:
+                    # Multiple dtypes specified (comma-separated)
+                    dtypes_to_calculate = [dtype.strip() for dtype in args.dtype.split(',')]
+                else:
+                    # Single dtype specified
+                    dtypes_to_calculate = [args.dtype]
+
+                # Validate all specified dtypes are available
+                invalid_dtypes = [dtype for dtype in dtypes_to_calculate if dtype not in available_dtypes]
+                if invalid_dtypes:
+                    console.print(f"[bold red]❌ Error:[/bold red] Invalid data types: {', '.join(invalid_dtypes)}")
+                    console.print(f"[dim]Available data types: {', '.join(available_dtypes)}[/dim]")
+                    sys.exit(1)
             else:
                 # No dtype specified - use recommended dtype if available, otherwise smart fallback
                 if config.recommended_dtype and config.recommended_dtype in available_dtypes:
@@ -490,21 +503,22 @@ Examples:
                         dtypes_to_calculate = available_dtypes
                         console.print(f"[yellow]⚠️  No preferred data types (fp16/bf16/fp32) available, showing all types[/yellow]")
             
+            # Calculate all memory values at once using LlmodelMemoryResult
+            memory_results = []
             for dtype in dtypes_to_calculate:
-                memory_gb = vram_calc.calculate_model_memory(num_params, dtype)
-                results["memory_by_dtype"][dtype] = memory_gb
+                memory_result = LlmodelMemoryResult(
+                    dtype=dtype,
+                    batch_size=args.batch_size,
+                    sequence_length=args.sequence_length,
+                    lora_rank=args.lora_rank
+                )
+                memory_result.calculate_all(config, num_params, vram_calc)
+                memory_results.append(memory_result)
             
-            # Store LoRA rank for calculations
-            results["lora_rank"] = args.lora_rank
             progress.update(task4, completed=100)
         
         # Print results
-        if args.show_detailed:
-            print_results(config, num_params, results, vram_calc, args.dtype)
-        else:
-            # Simplified output - just the header and main table
-            print_model_header(config, num_params, args.dtype)
-            print_memory_table(results, num_params, vram_calc)
+        print_results(config, memory_results, verbose=args.verbose)
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
