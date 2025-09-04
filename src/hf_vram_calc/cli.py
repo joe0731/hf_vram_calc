@@ -18,7 +18,7 @@ from .parser import ConfigParser
 from .calculator import VRAMCalculator, ParameterCalculator, LlmodelMemoryResult
 from .parallel import ParallelizationCalculator
 from .models import ModelConfig
-from . import __version__
+from .__init__ import __version__
 
 # Create global console instance
 console = Console()
