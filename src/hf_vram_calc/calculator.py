@@ -168,7 +168,7 @@ class ParameterCalculator:
             return transformers_params
 
         # Fallback to mathematical estimation
-        print(f"Using mathematical estimation for {config.model_name}")
+        print(f"Fallback to mathematical estimation for {config.model_name}")
 
         # embedding parameters
         embedding_params = ParameterCalculator.calculate_embedding_params(
