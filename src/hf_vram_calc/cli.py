@@ -18,6 +18,7 @@ from .parser import ConfigParser
 from .calculator import VRAMCalculator, ParameterCalculator, LlmodelMemoryResult
 from .parallel import ParallelizationCalculator
 from .models import ModelConfig
+from . import __version__
 
 # Create global console instance
 console = Console()
@@ -413,6 +414,13 @@ Examples:
         help="path to local config.json file instead of fetching from Hugging Face"
     )
     
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="show program's version number and exit"
+    )
+
     args = parser.parse_args()
     
     try:

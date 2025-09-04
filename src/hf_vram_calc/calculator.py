@@ -34,6 +34,10 @@ Memory Estimation Formulas:
    - Memory Overhead: lora_params × bytes_per_param × 4 (for gradients + optimizer)
 """
 
+import os
+import shutil
+import tempfile
+import uuid
 import torch
 from accelerate import init_empty_weights
 from transformers import AutoConfig, AutoModelForCausalLM
@@ -98,10 +102,16 @@ class ParameterCalculator:
         """
         Calculate exact parameter count using model.parameters() method.
         This is the most accurate method as it uses the actual model structure.
+        Uses a temporary cache directory to avoid conflicts and permission issues.
         """
+        # Create a unique temporary cache directory in /tmp/
+        temp_cache_dir = f"/tmp/hf_cache_{uuid.uuid4().hex[:8]}"
         try:
-            # Load model configuration
-            config_ = AutoConfig.from_pretrained(config.model_name)
+            # Set up temporary cache directory
+            os.makedirs(temp_cache_dir, exist_ok=True)
+
+            # Load model configuration with explicit cache directory
+            config_ = AutoConfig.from_pretrained(config.model_name, cache_dir=temp_cache_dir)
 
             # Get the actual torch_dtype from config, fallback to bfloat16 if not specified
             torch_dtype = getattr(config_, 'torch_dtype', torch.bfloat16)
@@ -125,6 +135,14 @@ class ParameterCalculator:
             print(f"Warning: Accurate parameter calculation failed for {config.model_name}: {e}")
             print("Falling back to mathematical estimation...")
             return None
+
+        finally:
+            # Clean up temporary cache directory
+            if os.path.exists(temp_cache_dir):
+                try:
+                    shutil.rmtree(temp_cache_dir)
+                except Exception as cleanup_error:
+                    print(f"Warning: Failed to clean up temporary cache directory {temp_cache_dir}: {cleanup_error}")
 
     @staticmethod
     def calculate_embedding_params(vocab_size: int, hidden_size: int) -> int:
