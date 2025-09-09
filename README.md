@@ -92,7 +92,7 @@ hf-vram-calc nvidia/DeepSeek-R1-0528-FP4
 ```bash
 # Override with specific data type
 hf-vram-calc meta-llama/Llama-2-7b-hf --dtype bf16
-hf-vram-calc mistralai/Mistral-7B-v0.1 --dtype nvfp4
+hf-vram-calc mistralai/Mistral-7B-v0.1 --dtype bf16,fp8
 ```
 
 ### Advanced Configuration
@@ -104,8 +104,8 @@ hf-vram-calc mistralai/Mistral-7B-v0.1 --batch-size 4 --sequence-length 4096
 # Custom LoRA rank for fine-tuning estimation  
 hf-vram-calc microsoft/DialoGPT-medium --lora-rank 128
 
-# Detailed analysis (enabled by default)
-hf-vram-calc meta-llama/Llama-2-7b-hf --show-detailed
+# Detailed analysis (disabled by default)
+hf-vram-calc meta-llama/Llama-2-7b-hf --verbose
 ```
 
 ### System Information
@@ -136,7 +136,7 @@ hf-vram-calc --help
 - `--lora-rank LORA_RANK`: LoRA rank for fine-tuning estimation (default: 64)
 
 ### Display & Configuration
-- `--show-detailed`: Show detailed parallelization and GPU compatibility (default: enabled)
+- `--verbose`: Show detailed parallelization and GPU compatibility (default: disabled)
 - `--config-dir CONFIG_DIR`: Custom configuration directory path
 - `--help`: Show complete help message with examples
 
@@ -162,7 +162,7 @@ hf-vram-calc meta-llama/Llama-2-7b-hf --dtype awq_int4 # → ~3.5GB
 hf-vram-calc meta-llama/Llama-4-Scout-17B-16E-Instruct --local-config config.json
 
 # Find optimal parallelization strategy
-hf-vram-calc mistralai/Mistral-7B-v0.1 --show-detailed  # → TP/PP recommendations
+hf-vram-calc mistralai/Mistral-7B-v0.1 --verbose  # → TP/PP recommendations
 
 # Check what's available
 hf-vram-calc --list-types                               # → All types & GPUs
@@ -221,13 +221,15 @@ Each GPU holds a complete model copy, only splitting data.
 ### Smart Dtype Detection Example
 
 ```bash
-$ hf-vram-calc microsoft/DialoGPT-medium
+$ hf-vram-calc microsoft/DialoGPT-medium --verbose
 ```
 
 ```
 Using recommended data type: FP16
 Use --dtype to specify different type, or see --list-types for all options
   🔍 Fetching configuration for microsoft/DialoGPT-medium...
+Using recommended data type: FP16
+Use --dtype to specify different type, or see --list-types for all options
   📋 Parsing model configuration...                         
   🧮 Calculating model parameters...                        
   💾 Computing memory requirements...                       
@@ -236,19 +238,19 @@ Use --dtype to specify different type, or see --list-types for all options
                           │                                    │
                           │  Model: microsoft/DialoGPT-medium  │
                           │  Architecture: gpt2                │
-                          │  Parameters: 405,016,576 (405.0M)  │
+                          │  Parameters: 406,286,336 (406.3M)  │
                           │  Recommended dtype: FP16           │
                           │                                    │
                           ╰────────────────────────────────────╯
 
         💾 Memory Requirements by Data Type and Scenario                
-╭──────────────┬──────────────┬──────────────┬─────────────────┬──────────────╮
-│              │   Total Size │    Inference │        Training │         LoRA │
-│  Data Type   │         (GB) │         (GB) │     (Adam) (GB) │         (GB) │
-├──────────────┼──────────────┼──────────────┼─────────────────┼──────────────┤
-│     FP16     │         0.75 │         0.91 │            3.92 │         0.94 │
-╰──────────────┴──────────────┴──────────────┴─────────────────┴──────────────╯
-
+╭──────────────┬──────────────┬─────────────────┬─────────────────┬─────────────────┬──────────────╮
+│              │   Model Size │        KV Cache │       Inference │        Training │         LoRA │
+│  Data Type   │         (GB) │            (GB) │      Total (GB) │     (Adam) (GB) │         (GB) │
+├──────────────┼──────────────┼─────────────────┼─────────────────┼─────────────────┼──────────────┤
+│     FP16     │         0.76 │            0.19 │            0.91 │            3.94 │         0.94 │
+╰──────────────┴──────────────┴─────────────────┴─────────────────┴─────────────────┴──────────────╯
+================================================================================
           ⚡ Parallelization Strategies (FP16 Inference)                 
 ╔════════════════════╤══════╤══════╤══════╤══════╤══════════════╤══════════════╗
 ║                    │      │      │      │      │   Memory/GPU │   Min GPU    ║
