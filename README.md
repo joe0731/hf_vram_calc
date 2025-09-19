@@ -13,6 +13,11 @@ A professional Python CLI tool for estimating GPU memory requirements for Huggin
 ```bash
 # Install and run
 pip install hf-vram-calc
+
+# Set up authentication (required for most models)
+hf auth login --token yourtoken --add-to-git-credential
+
+# Calculate memory requirements
 hf-vram-calc microsoft/DialoGPT-medium
 
 # Output: Beautiful tables showing 0.9GB inference, GPU compatibility, parallelization strategies
@@ -74,6 +79,14 @@ uv pip install .
 > **Dependencies**: `requests` (HTTP), `rich` (beautiful CLI), Python ≥3.8
 
 For detailed build instructions, see: [BUILD.md](BUILD.md)
+
+## Authentication Setup
+
+Many models require a Hugging Face token. Get yours at https://huggingface.co/settings/tokens, then:
+
+```bash
+hf auth login --token yourtoken --add-to-git-credential
+```
 
 ## Usage
 
@@ -148,6 +161,9 @@ hf-vram-calc --help
 ## Quick Start Examples
 
 ```bash
+# Set up authentication first time
+hf auth login --token yourtoken --add-to-git-credential
+
 # Estimate memory for different models
 hf-vram-calc microsoft/DialoGPT-medium              # → 0.9GB inference (FP16)
 hf-vram-calc meta-llama/Llama-2-7b-hf              # → ~13GB inference  
