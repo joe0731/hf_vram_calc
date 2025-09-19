@@ -98,7 +98,25 @@ class ConfigParser:
         # Fetch from Hugging Face if no local config specified
         try:
             url = f"https://huggingface.co/{model_name}/raw/main/config.json"
-            response = requests.get(url, timeout=10)
+            
+            # Add authentication headers if token is available
+            headers = {}
+            import os
+            token = os.getenv('HUGGINGFACE_HUB_TOKEN') or os.getenv('HF_TOKEN')
+            if not token:
+                # Try to read from HF CLI cache
+                try:
+                    import pathlib
+                    token_file = pathlib.Path.home() / '.cache' / 'huggingface' / 'token'
+                    if token_file.exists():
+                        token = token_file.read_text().strip()
+                except:
+                    pass
+            
+            if token:
+                headers['Authorization'] = f'Bearer {token}'
+            
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
