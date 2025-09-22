@@ -6,7 +6,7 @@
 
 A professional Python CLI tool for estimating GPU memory requirements for Hugging Face models with different data types and parallelization strategies.
 
-> **⚡ Latest Features**: Smart dtype detection, 12 quantization formats, 20+ GPU models, professional Rich UI
+> **⚡ Latest Features**: Smart dtype detection, MHA/MQA/GQA-aware KV cache, 12 quantization formats, 20+ GPU models, professional Rich UI
 
 ## Quick Demo
 
@@ -29,7 +29,7 @@ hf-vram-calc microsoft/DialoGPT-medium
 - 🧠 **Smart Data Type Detection**: Intelligent dtype recommendation from model names, config, or defaults
 - 📊 **Comprehensive Data Type Support**: fp32, fp16, bf16, fp8, int8, int4, mxfp4, nvfp4, awq_int4, gptq_int4, nf4, fp4
 - 🎯 **Multi-Scenario Memory Estimation**:
-  - **Inference**: Model weights + KV cache overhead (×1.2 factor)
+  - **Inference**: Model weights + KV cache overhead (MHA/MQA/GQA-aware, ×1.2 factor)
   - **Training**: Full Adam optimizer states (×4×1.3 factors)
   - **LoRA Fine-tuning**: Low-rank adaptation with trainable parameter overhead
 - ⚡ **Advanced Parallelization Analysis**:
@@ -360,6 +360,14 @@ Available GPU Types:
 Inference Memory = Model Weights × 1.2
 ```
 Includes model weights and KV cache overhead.
+
+### KV Cache Memory
+```
+KV Cache (GB) = 2 × Batch_Size × Sequence_Length × Head_Dim × Num_KV_Heads × Num_Layers × Precision ÷ 1,073,741,824
+```
+- Head_Dim = hidden_size ÷ num_attention_heads
+- Num_KV_Heads = config.num_key_value_heads (if present) else num_attention_heads
+- Automatically supports MHA, MQA, and GQA via model config; KV cache uses FP16/BF16 for quantized models
 
 ### Training Memory (with Adam)
 ```

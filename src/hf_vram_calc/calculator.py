@@ -259,7 +259,16 @@ class VRAMCalculator:
                                  sequence_length: int = 2048) -> float:
         """
         Calculate KV Cache memory requirements in GB.
-        Formula: KV_Cache (GB) = 2 × Batch_Size × Sequence_Length × Hidden_Dim × Num_Layers × Precision ÷ 1,073,741,824
+        Formula: KV_Cache (GB) = 2 × Batch_Size × Sequence_Length × Head_Dim × Num_KV_Heads × Num_Layers × Precision ÷ 1,073,741,824
+        
+        Supports MHA/MQA/GQA via model configuration:
+        - MHA: Num_KV_Heads = Num_Query_Heads (i.e., config.num_key_value_heads is None)
+        - MQA: Num_KV_Heads = 1 (i.e., config.num_key_value_heads == 1)
+        - GQA: Num_KV_Heads = Num_Query_Heads / Num_Groups (as provided in config.num_key_value_heads)
+        
+        Implementation details:
+        - Num_KV_Heads is taken from config.num_key_value_heads if present; otherwise falls back to config.num_attention_heads
+        - Head_Dim = hidden_size // num_attention_heads
         Args:
             config: Model configuration
             dtype: Data type for the model (KV cache uses appropriate precision, not necessarily same as model)
@@ -277,9 +286,26 @@ class VRAMCalculator:
             # Use the same precision as the model for non-quantized models
             precision_bytes = int(self.get_dtype_size(dtype))
 
-        # KV Cache formula: 2 × Batch_Size × Sequence_Length × Hidden_Dim × Num_Layers × Precision
-        kv_cache_bytes = (2 * batch_size * sequence_length *
-                         config.hidden_size * config.num_layers * precision_bytes)
+        # Derive the number of KV heads from config; fallback to query heads when unspecified
+        num_kv_heads = config.num_key_value_heads if config.num_key_value_heads is not None else config.num_attention_heads
+
+        # Head dimension derived from hidden size and number of attention heads
+        if config.num_attention_heads and config.num_attention_heads > 0:
+            head_dim = config.hidden_size // config.num_attention_heads
+        else:
+            head_dim = config.hidden_size
+
+        # General KV cache formula accounting for GQA/MQA/MHA:
+        # 2 (K and V) × B × S × head_dim × num_kv_heads × L × precision_bytes
+        kv_cache_bytes = (
+            2
+            * batch_size
+            * sequence_length
+            * head_dim
+            * num_kv_heads
+            * config.num_layers
+            * precision_bytes
+        )
         # Convert to GB (divide by 1,073,741,824)
         kv_cache_gb = kv_cache_bytes / (1024 ** 3)
         return kv_cache_gb
