@@ -395,23 +395,23 @@ Examples:
     )
     
     parser.add_argument(
-        "--config-dir",
-        type=str,
-        default=None,
-        help="path to configuration directory (default: same as script)"
-    )
-    
-    parser.add_argument(
         "--list-types",
         action="store_true",
         help="list all available data types and GPU types"
+    )
+
+    parser.add_argument(
+        "--config-dir",
+        type=str,
+        default=None,
+        help="path to custom data_types.json, gpu_types.json, and display_settings.json (default: use config in this repo)"
     )
     
     parser.add_argument(
         "--local-config",
         type=str,
         default=None,
-        help="path to local config.json file instead of fetching from Hugging Face"
+        help="path to local model config.json file instead of fetching from Hugging Face"
     )
     
     parser.add_argument(
@@ -451,12 +451,12 @@ Examples:
             
             # Fetch and parse config
             task1 = progress.add_task(f"🔍 Fetching configuration for {args.model_name}...", total=100)
-            config_data = ConfigParser.fetch_config(args.model_name, args.local_config)
+            config_path = ConfigParser.fetch_config(args.model_name, args.local_config)
             progress.update(task1, completed=100)
             
             # Parse config
             task2 = progress.add_task("📋 Parsing model configuration...", total=100)
-            config = ConfigParser.parse_config(config_data, args.model_name)
+            config = ConfigParser.parse_config(config_path, args.model_name)
             progress.update(task2, completed=100)
             
             # Calculate parameters
@@ -531,6 +531,9 @@ Examples:
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
         sys.exit(1)
+    finally:
+        # Clean up global cache directory
+        ConfigParser.cleanup_global_cache()
 
 
 if __name__ == "__main__":
