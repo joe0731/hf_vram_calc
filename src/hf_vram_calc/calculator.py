@@ -40,7 +40,7 @@ import tempfile
 import uuid
 import torch
 from accelerate import init_empty_weights
-from transformers import AutoConfig, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM
 from dataclasses import dataclass
 from typing import Dict
 
@@ -102,26 +102,20 @@ class ParameterCalculator:
         """
         Calculate exact parameter count using model.parameters() method.
         This is the most accurate method as it uses the actual model structure.
-        Uses a temporary cache directory to avoid conflicts and permission issues.
+        Uses the global cache directory from ConfigParser.
         """
-        # Create a unique temporary cache directory in /tmp/
-        temp_cache_dir = f"/tmp/hf_cache_{uuid.uuid4().hex[:8]}"
         try:
-            # Set up temporary cache directory
-            os.makedirs(temp_cache_dir, exist_ok=True)
-
-            # Load model configuration with explicit cache directory
-            config_ = AutoConfig.from_pretrained(config.model_name, cache_dir=temp_cache_dir)
+            test_config = ModelConfig.test_config
 
             # Get the actual torch_dtype from config, fallback to bfloat16 if not specified
-            torch_dtype = getattr(config_, 'torch_dtype', torch.bfloat16)
+            torch_dtype = getattr(ModelConfig, 'torch_dtype', torch.bfloat16)
             if isinstance(torch_dtype, str):
                 # Convert string dtype to torch dtype
                 torch_dtype = getattr(torch, torch_dtype, torch.bfloat16)
 
             # Create empty model to get exact parameter count
             with init_empty_weights():
-                model = AutoModelForCausalLM.from_config(config_, dtype=torch_dtype)
+                model = AutoModelForCausalLM.from_config(test_config, dtype=torch_dtype)
 
             # Count total parameters
             total_params = 0
@@ -136,47 +130,6 @@ class ParameterCalculator:
             print("Falling back to mathematical estimation...")
             return None
 
-        finally:
-            # Clean up temporary cache directory
-            if os.path.exists(temp_cache_dir):
-                try:
-                    shutil.rmtree(temp_cache_dir)
-                except Exception as cleanup_error:
-                    print(f"Warning: Failed to clean up temporary cache directory {temp_cache_dir}: {cleanup_error}")
-
-    @staticmethod
-    def calculate_embedding_params(vocab_size: int, hidden_size: int) -> int:
-        """Calculate embedding layer parameters"""
-        return vocab_size * hidden_size
-    
-    @staticmethod
-    def calculate_attention_params(hidden_size: int, num_attention_heads: int, 
-                                 num_key_value_heads: int = None) -> int:
-        """Calculate attention layer parameters"""
-        if num_key_value_heads is not None and num_key_value_heads != num_attention_heads:
-            # grouped-query attention or multi-query attention
-            q_params = num_attention_heads * hidden_size * hidden_size
-            kv_params = num_key_value_heads * hidden_size * hidden_size * 2
-            output_params = hidden_size * hidden_size
-            return q_params + kv_params + output_params
-        else:
-            # standard multi-head attention (Q, K, V, O projections)
-            return 4 * hidden_size * hidden_size
-    
-    @staticmethod
-    def calculate_ffn_params(hidden_size: int, intermediate_size: int = None) -> int:
-        """Calculate feed-forward network parameters"""
-        if intermediate_size is None:
-            intermediate_size = 4 * hidden_size
-        # up projection + down projection
-        return 2 * hidden_size * intermediate_size
-    
-    @staticmethod
-    def calculate_layer_norm_params(hidden_size: int) -> int:
-        """Calculate layer normalization parameters"""
-        # weight and bias
-        return 2 * hidden_size
-    
     @staticmethod
     def calculate_transformer_params(config: ModelConfig) -> int:
         """Calculate parameters for transformer-based models"""
@@ -184,43 +137,8 @@ class ParameterCalculator:
         transformers_params = ParameterCalculator.calculate_parameters_by_transformers(config)
         if transformers_params is not None:
             return transformers_params
-
-        # Fallback to mathematical estimation
-        print(f"Fallback to mathematical estimation for {config.model_name}")
-
-        # embedding parameters
-        embedding_params = ParameterCalculator.calculate_embedding_params(
-            config.vocab_size, config.hidden_size
-        )
-
-        # attention parameters
-        attention_params = ParameterCalculator.calculate_attention_params(
-            config.hidden_size, config.num_attention_heads, config.num_key_value_heads
-        )
-
-        # feed-forward network parameters
-        ffn_params = ParameterCalculator.calculate_ffn_params(
-            config.hidden_size, config.intermediate_size
-        )
-
-        # layer normalization parameters (usually 2 per layer: pre-attention and pre-ffn)
-        ln_params_per_layer = ParameterCalculator.calculate_layer_norm_params(config.hidden_size) * 2
-
-        # total parameters per layer
-        per_layer_params = attention_params + ffn_params + ln_params_per_layer
-
-        # all layers
-        all_layers_params = per_layer_params * config.num_layers
-
-        # output projection (usually tied with embeddings, but count separately for accuracy)
-        output_params = config.vocab_size * config.hidden_size
-
-        # final layer normalization
-        final_ln_params = ParameterCalculator.calculate_layer_norm_params(config.hidden_size)
-
-        total_params = embedding_params + all_layers_params + output_params + final_ln_params
-
-        return total_params
+        else:
+            raise ValueError(f"Failed to calculate parameters for {config.model_name}")
 
 
 class VRAMCalculator:

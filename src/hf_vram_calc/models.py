@@ -21,3 +21,4 @@ class ModelConfig:
     model_type: str = "unknown"
     torch_dtype: Optional[str] = None
     recommended_dtype: Optional[str] = None
+    test_config: Optional[dict] = None
