@@ -41,6 +41,51 @@ class ConfigParser:
                 print(f"Warning: Failed to clean up cache directory {cls._global_cache_dir}: {e}")
 
     @staticmethod
+    def _get_token() -> Optional[str]:
+        """Get Hugging Face token from environment variables or cache"""
+        # Try environment variables first
+        token = os.getenv('HUGGINGFACE_HUB_TOKEN') or os.getenv('HF_TOKEN')
+        if token:
+            return token
+
+        # Try to read from HF CLI cache
+        try:
+            import pathlib
+            token_file = pathlib.Path.home() / '.cache' / 'huggingface' / 'token'
+            if token_file.exists():
+                token = token_file.read_text().strip()
+                if token:
+                    return token
+        except:
+            pass
+
+        return None
+
+    @staticmethod
+    def _request_token_interactively() -> Optional[str]:
+        """Request Hugging Face token from user interactively"""
+        try:
+            print("\n🔐 This model requires Hugging Face authentication.")
+            print("You can get your token from: https://huggingface.co/settings/tokens")
+            token = input("Enter your Hugging Face token (or press Enter to skip): ").strip()
+            if not token:
+                return None
+            # Validate token format (basic check)
+            if not token.startswith('hf_') and len(token) < 20:
+                print("Warning: Token doesn't look like a valid Hugging Face token.")
+                print("Valid tokens usually start with 'hf_' and are longer.")
+                retry = input("Continue anyway? (y/N): ").strip().lower()
+                if retry not in ['y', 'yes']:
+                    return None
+            return token
+        except KeyboardInterrupt:
+            print("\nToken input cancelled.")
+            return None
+        except Exception as e:
+            print(f"Error getting token input: {e}")
+            return None
+
+    @staticmethod
     def safe_get(obj, *keys):
         """Safely get attribute from config object or dict"""
         for key in keys:
@@ -147,16 +192,7 @@ class ConfigParser:
 
             # Add authentication headers if token is available
             headers = {}
-            token = os.getenv('HUGGINGFACE_HUB_TOKEN') or os.getenv('HF_TOKEN')
-            if not token:
-                # Try to read from HF CLI cache
-                try:
-                    import pathlib
-                    token_file = pathlib.Path.home() / '.cache' / 'huggingface' / 'token'
-                    if token_file.exists():
-                        token = token_file.read_text().strip()
-                except:
-                    pass
+            token = ConfigParser._get_token()
 
             if token:
                 headers['Authorization'] = f'Bearer {token}'
@@ -170,11 +206,36 @@ class ConfigParser:
             return cached_config_path
 
         except requests.RequestException as e:
-            error_msg = (
-                f"failed to fetch config for model '{model_name}': {e}. "
-                "Please check network connection or try using --local-config option"
-            )
-            raise RuntimeError(error_msg)
+            # If 403 Forbidden, try to get token from user
+            if hasattr(e, 'response') and e.response is not None and e.response.status_code == 403:
+                token = ConfigParser._request_token_interactively()
+                if token:
+                    headers['Authorization'] = f'Bearer {token}'
+                    try:
+                        response = requests.get(url, headers=headers, timeout=10)
+                        response.raise_for_status()
+                        # Save config to cache
+                        with open(cached_config_path, 'w', encoding='utf-8') as f:
+                            json.dump(response.json(), f, indent=2)
+                        return cached_config_path
+                    except requests.RequestException as retry_e:
+                        error_msg = (
+                            f"failed to fetch config for model '{model_name}' even with token: {retry_e}. "
+                            "Please check your token or try using --local-config option"
+                        )
+                        raise RuntimeError(error_msg)
+                else:
+                    error_msg = (
+                        f"failed to fetch config for model '{model_name}': {e}. "
+                        "This model may require authentication. Please use --local-config option or run 'huggingface-cli login'"
+                    )
+                    raise RuntimeError(error_msg)
+            else:
+                error_msg = (
+                    f"failed to fetch config for model '{model_name}': {e}. "
+                    "Please check network connection or try using --local-config option"
+                )
+                raise RuntimeError(error_msg)
 
     @staticmethod
     def parse_config(config_path: str, model_name: str) -> ModelConfig:
