@@ -41,6 +41,16 @@ class ConfigParser:
                 print(f"Warning: Failed to clean up cache directory {cls._global_cache_dir}: {e}")
 
     @staticmethod
+    def safe_get(obj, *keys):
+        """Safely get attribute from config object or dict"""
+        for key in keys:
+            if hasattr(obj, key):
+                return getattr(obj, key)
+            elif hasattr(obj, 'get') and callable(getattr(obj, 'get')):
+                return obj.get(key)
+        return None
+
+    @staticmethod
     def extract_dtype_from_model_name(model_name: str) -> Optional[str]:
         """Extract data type from model name if present"""
         model_name_lower = model_name.lower()
@@ -174,41 +184,15 @@ class ConfigParser:
             cfg = AutoConfig.from_pretrained(config_path, local_files_only=True)
             if hasattr(cfg, 'text_config'):
                 text_config = cfg.text_config
-                print(f"This model config is MOE, using text_config for {model_name}")
+                # This model config is MOE, using text_config
             else:
                 text_config = cfg
-                print(f"This model config is a causal model, using root config for {model_name}")
-            # Check if this is a multimodal model with text_config
-            hidden_size = (text_config.get("hidden_size") or
-                          text_config.get("n_embd") or
-                          text_config.get("d_model"))
+                # This model config is a causal model, using root config
 
-            num_layers = (text_config.get("num_hidden_layers") or
-                         text_config.get("num_layers") or
-                         text_config.get("n_layer") or
-                         text_config.get("n_layers"))
-
-            num_attention_heads = (text_config.get("num_attention_heads") or
-                         text_config.get("n_head") or
-                         text_config.get("num_heads"))
-
-            # Handle different field names for different model architectures
-            hidden_size = (text_config.get("hidden_size") or
-                          text_config.get("n_embd") or
-                          text_config.get("d_model"))
-
-            num_layers = (text_config.get("num_hidden_layers") or
-                         text_config.get("num_layers") or
-                         text_config.get("n_layer") or
-                         text_config.get("n_layers"))
-
-            num_attention_heads = (text_config.get("num_attention_heads") or
-                                 text_config.get("n_head") or
-                                 text_config.get("num_heads"))
-            
-            intermediate_size = (text_config.get("intermediate_size") or
-                               text_config.get("n_inner") or
-                               text_config.get("d_ff"))
+            hidden_size = ConfigParser.safe_get(text_config, "hidden_size", "n_embd", "d_model")
+            num_layers = ConfigParser.safe_get(text_config, "num_hidden_layers", "num_layers", "n_layer", "n_layers")
+            num_attention_heads = ConfigParser.safe_get(text_config, "num_attention_heads", "n_head", "num_heads")
+            intermediate_size = ConfigParser.safe_get(text_config, "intermediate_size", "n_inner", "d_ff")
 
             if not all([hidden_size, num_layers, num_attention_heads]):
                 missing_fields = []
@@ -222,20 +206,20 @@ class ConfigParser:
 
             # Extract torch_dtype and determine recommended data type
             # For multimodal models, prefer text_config torch_dtype, fallback to root
-            torch_dtype = text_config.get("torch_dtype") or cfg.get("torch_dtype")
+            torch_dtype = ConfigParser.safe_get(text_config, "torch_dtype") or ConfigParser.safe_get(cfg, "torch_dtype")
             recommended_dtype = ConfigParser.map_torch_dtype_to_our_dtype(torch_dtype, model_name)
-            
+
             return ModelConfig(
                 model_name=model_name,
-                model_type=text_config.get("model_type"),
-                vocab_size=text_config["vocab_size"],
+                model_type=ConfigParser.safe_get(text_config, "model_type"),
+                vocab_size=ConfigParser.safe_get(text_config, "vocab_size"),
                 hidden_size=hidden_size,
                 num_layers=num_layers,
                 num_attention_heads=num_attention_heads,
                 intermediate_size=intermediate_size,
-                num_key_value_heads=text_config.get("num_key_value_heads"),
-                max_position_embeddings=text_config.get("max_position_embeddings", text_config.get("n_positions")),
-                rope_theta=text_config.get("rope_theta"),
+                num_key_value_heads=ConfigParser.safe_get(text_config, "num_key_value_heads"),
+                max_position_embeddings=ConfigParser.safe_get(text_config, "max_position_embeddings", "n_positions"),
+                rope_theta=ConfigParser.safe_get(text_config, "rope_theta"),
                 torch_dtype=torch_dtype,
                 recommended_dtype=recommended_dtype,
                 test_config=text_config # to save the original test config

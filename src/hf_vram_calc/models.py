@@ -3,7 +3,7 @@ Data models for HF VRAM Calculator.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 
 @dataclass
@@ -21,4 +21,4 @@ class ModelConfig:
     model_type: str = "unknown"
     torch_dtype: Optional[str] = None
     recommended_dtype: Optional[str] = None
-    test_config: Optional[dict] = None
+    test_config: Optional[Any] = None  # Stores the original config object from AutoConfig

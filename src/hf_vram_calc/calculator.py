@@ -105,10 +105,13 @@ class ParameterCalculator:
         Uses the global cache directory from ConfigParser.
         """
         try:
-            test_config = ModelConfig.test_config
+            test_config = config.test_config
+
+            if test_config is None:
+                raise ValueError("test_config is None - config object not properly stored")
 
             # Get the actual torch_dtype from config, fallback to bfloat16 if not specified
-            torch_dtype = getattr(ModelConfig, 'torch_dtype', torch.bfloat16)
+            torch_dtype = getattr(config, 'torch_dtype', torch.bfloat16)
             if isinstance(torch_dtype, str):
                 # Convert string dtype to torch dtype
                 torch_dtype = getattr(torch, torch_dtype, torch.bfloat16)
