@@ -426,6 +426,8 @@ Examples:
     try:
         # Initialize configuration manager
         config_manager = ConfigManager(args.config_dir)
+        # Initialize VRAM calculator with config
+        vram_calc = VRAMCalculator(config_manager)
         
         # If user wants to list types, show and exit
         if args.list_types:
@@ -438,93 +440,74 @@ Examples:
             console.print("[bold red]❌ Error:[/bold red] model_name is required unless using --list-types")
             parser.print_help()
             sys.exit(1)
-        
-        # Initialize VRAM calculator with config
-        vram_calc = VRAMCalculator(config_manager)
-        
-        # Use rich progress for better UX
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console
-        ) as progress:
-            
-            # Fetch and parse config
-            task1 = progress.add_task(f"🔍 Fetching configuration for {args.model_name}...", total=100)
-            config_path = ConfigParser.fetch_config(args.model_name, args.local_config)
-            progress.update(task1, completed=100)
-            
-            # Parse config
-            task2 = progress.add_task("📋 Parsing model configuration...", total=100)
-            config = ConfigParser.parse_config(config_path, args.model_name)
-            progress.update(task2, completed=100)
-            
-            # Calculate parameters
-            task3 = progress.add_task("🧮 Calculating model parameters...", total=100)
-            num_params = ParameterCalculator.calculate_transformer_params(config)
-            progress.update(task3, completed=100)
-            
-            # Calculate memory requirements
-            task4 = progress.add_task("💾 Computing memory requirements...", total=100)
-            
-            available_dtypes = list(config_manager.get_data_types().keys())
-            
-            # Determine which data types to calculate
-            if args.dtype:
-                # User specified dtype(s) - support both single dtype and comma-separated list
-                if ',' in args.dtype:
-                    # Multiple dtypes specified (comma-separated)
-                    dtypes_to_calculate = [dtype.strip() for dtype in args.dtype.split(',')]
-                else:
-                    # Single dtype specified
-                    dtypes_to_calculate = [args.dtype]
 
-                # Validate all specified dtypes are available
-                invalid_dtypes = [dtype for dtype in dtypes_to_calculate if dtype not in available_dtypes]
-                if invalid_dtypes:
-                    console.print(f"[bold red]❌ Error:[/bold red] Invalid data types: {', '.join(invalid_dtypes)}")
-                    console.print(f"[dim]Available data types: {', '.join(available_dtypes)}[/dim]")
-                    sys.exit(1)
+        # Fetch config
+        console.print(f"🔍 Fetching configuration for {args.model_name}...")
+        config_path = ConfigParser.fetch_config(args.model_name, args.local_config)
+
+        # Parse config
+        console.print("📋 Parsing model configuration...")
+        config = ConfigParser.parse_config(config_path, args.model_name)
+
+        # Calculate parameters
+        console.print("🧮 Calculating model parameters...")
+        num_params = ParameterCalculator.calculate_transformer_params(config)
+
+        # Calculate memory requirements
+        console.print("💾 Computing memory requirements...")
+        available_dtypes = list(config_manager.get_data_types().keys())
+
+        # Determine which data types to calculate
+        if args.dtype:
+            # User specified dtype(s) - support both single dtype and comma-separated list
+            if ',' in args.dtype:
+                # Multiple dtypes specified (comma-separated)
+                dtypes_to_calculate = [dtype.strip() for dtype in args.dtype.split(',')]
             else:
-                # No dtype specified - use recommended dtype if available, otherwise smart fallback
-                if config.recommended_dtype and config.recommended_dtype in available_dtypes:
-                    # Use recommended dtype only
-                    dtypes_to_calculate = [config.recommended_dtype]
-                    console.print(f"[dim]Using recommended data type: {config.recommended_dtype.upper()}[/dim]")
+                # Single dtype specified
+                dtypes_to_calculate = [args.dtype]
+
+            # Validate all specified dtypes are available
+            invalid_dtypes = [dtype for dtype in dtypes_to_calculate if dtype not in available_dtypes]
+            if invalid_dtypes:
+                console.print(f"[bold red]❌ Error:[/bold red] Invalid data types: {', '.join(invalid_dtypes)}")
+                console.print(f"[dim]Available data types: {', '.join(available_dtypes)}[/dim]")
+                sys.exit(1)
+        else:
+            # No dtype specified - use recommended dtype if available, otherwise smart fallback
+            if config.recommended_dtype and config.recommended_dtype in available_dtypes:
+                # Use recommended dtype only
+                dtypes_to_calculate = [config.recommended_dtype]
+                console.print(f"[dim]Using recommended data type: {config.recommended_dtype.upper()}[/dim]")
+                console.print(f"[dim]Use --dtype to specify different type, or see --list-types for all options[/dim]")
+            else:
+                # Recommended dtype not available - smart fallback to fp16/bf16/fp32
+                fallback_dtype = None
+                for preferred in ['fp16', 'bf16', 'fp32']:
+                    if preferred in available_dtypes:
+                        fallback_dtype = preferred
+                        break
+                if fallback_dtype:
+                    dtypes_to_calculate = [fallback_dtype]
+                    if config.recommended_dtype:
+                        console.print(f"[yellow]⚠️  Recommended dtype '{config.recommended_dtype}' not available[/yellow]")
+                    console.print(f"[dim]Using default data type: {fallback_dtype.upper()} (fp16/bf16 preferred)[/dim]")
                     console.print(f"[dim]Use --dtype to specify different type, or see --list-types for all options[/dim]")
                 else:
-                    # Recommended dtype not available - smart fallback to fp16/bf16/fp32
-                    fallback_dtype = None
-                    for preferred in ['fp16', 'bf16', 'fp32']:
-                        if preferred in available_dtypes:
-                            fallback_dtype = preferred
-                            break
-                    
-                    if fallback_dtype:
-                        dtypes_to_calculate = [fallback_dtype]
-                        if config.recommended_dtype:
-                            console.print(f"[yellow]⚠️  Recommended dtype '{config.recommended_dtype}' not available[/yellow]")
-                        console.print(f"[dim]Using default data type: {fallback_dtype.upper()} (fp16/bf16 preferred)[/dim]")
-                        console.print(f"[dim]Use --dtype to specify different type, or see --list-types for all options[/dim]")
-                    else:
-                        # No preferred types available, show all types
-                        dtypes_to_calculate = available_dtypes
-                        console.print(f"[yellow]⚠️  No preferred data types (fp16/bf16/fp32) available, showing all types[/yellow]")
-            
-            # Calculate all memory values at once using LlmodelMemoryResult
-            memory_results = []
-            for dtype in dtypes_to_calculate:
-                memory_result = LlmodelMemoryResult(
-                    dtype=dtype,
-                    batch_size=args.batch_size,
-                    sequence_length=args.sequence_length,
-                    lora_rank=args.lora_rank
-                )
-                memory_result.calculate_all(config, num_params, vram_calc)
-                memory_results.append(memory_result)
-            
-            progress.update(task4, completed=100)
-        
+                    # No preferred types available, show all types
+                    dtypes_to_calculate = available_dtypes
+                    console.print(f"[yellow]⚠️  No preferred data types (fp16/bf16/fp32) available, showing all types[/yellow]")
+        # Calculate all memory values at once using LlmodelMemoryResult
+        memory_results = []
+        for dtype in dtypes_to_calculate:
+            memory_result = LlmodelMemoryResult(
+                dtype=dtype,
+                batch_size=args.batch_size,
+                sequence_length=args.sequence_length,
+                lora_rank=args.lora_rank
+            )
+            memory_result.calculate_all(config, num_params, vram_calc)
+            memory_results.append(memory_result)
         # Print results
         print_results(config, memory_results, verbose=args.verbose)
         
