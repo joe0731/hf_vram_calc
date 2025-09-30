@@ -1,0 +1,47 @@
+# Example extra_llm_api_options.yaml for hf-vram-calc
+# This file can be used with --extra_llm_api_options to override command line arguments
+
+# Model configuration
+model: "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+model_path: "/localhome/swqa/llm_data/llm-models/Llama-4-Scout-17B-16E-Instruct"  # Set to local path if using local model
+dtype: "fp8"
+
+# KV Cache configuration
+kv_cache_config:
+  dtype: "fp8"
+  mamba_ssm_cache_dtype: "fp16"
+
+# Enable chunked prefill
+enable_chunked_prefill: true
+
+# Build configuration (maps to CLI arguments)
+build_config:
+  max_batch_size: 4
+  max_num_tokens: 8192
+  max_seq_len: 4096
+
+# Quantization configuration
+quant_config:
+  quant_algo: "fp8"
+  kv_cache_quant_algo: "fp8"
+
+# Decoding configuration
+decoding_config:
+  medusa_choices: [[0, 1], [0, 2], [1, 2]]
+
+# LoRA configuration
+lora_config:
+  lora_dir: "/path/to/lora/weights"
+  max_lora_rank: 16
+
+# Performance options
+performance_options:
+  cuda_graphs: true
+  multi_block_mode: true
+
+# Output settings
+log_level: "verbose"  # "info" or "verbose"
+
+# Configuration paths
+config_dir: null  # Set to custom config directory if needed
+list_types: false  # Set to true to list available types and exit

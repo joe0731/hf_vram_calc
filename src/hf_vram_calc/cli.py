@@ -4,7 +4,9 @@ Command-line interface for HF VRAM Calculator.
 
 import argparse
 import sys
-from typing import Dict
+import yaml
+from pathlib import Path
+from typing import Dict, Any
 
 from rich.console import Console
 from rich.table import Table
@@ -23,6 +25,108 @@ from .__init__ import __version__
 # Create global console instance
 console = Console()
 
+
+def load_yaml_config(yaml_path: str) -> Dict[str, Any]:
+    """Load YAML configuration file and return as dictionary"""
+    try:
+        yaml_file = Path(yaml_path)
+        if not yaml_file.exists():
+            raise FileNotFoundError(f"YAML file not found: {yaml_path}")
+
+        with open(yaml_file, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+
+        if not isinstance(config, dict):
+            raise ValueError("YAML file must contain a dictionary at the root level")
+
+        return config
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML format in {yaml_path}: {e}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load YAML config from {yaml_path}: {e}")
+
+
+def apply_yaml_overrides(args: argparse.Namespace, yaml_config: Dict[str, Any]) -> argparse.Namespace:
+    """Apply YAML configuration overrides to command line arguments"""
+    # Handle top-level direct mappings
+    direct_mappings = {
+        'model': 'model',
+        'model_path': 'model_path',
+        'dtype': 'dtype',
+        'log_level': 'log_level',
+        'config_dir': 'config_dir',
+        'list_types': 'list_types'
+    }
+
+    # Apply direct mappings
+    for yaml_key, arg_name in direct_mappings.items():
+        if yaml_key in yaml_config:
+            value = yaml_config[yaml_key]
+            if arg_name == 'list_types' and isinstance(value, bool):
+                setattr(args, arg_name, value)
+            elif arg_name != 'list_types':
+                setattr(args, arg_name, value)
+
+    # Handle build_config section
+    if 'build_config' in yaml_config:
+        build_config = yaml_config['build_config']
+        if 'max_batch_size' in build_config:
+            setattr(args, 'max_batch_size', build_config['max_batch_size'])
+        if 'max_seq_len' in build_config:
+            setattr(args, 'max_seq_len', build_config['max_seq_len'])
+        if 'max_num_tokens' in build_config:
+            # Map max_num_tokens to max_seq_len if max_seq_len not specified
+            if not hasattr(args, 'max_seq_len') or args.max_seq_len == 2048:  # default value
+                setattr(args, 'max_seq_len', build_config['max_num_tokens'])
+
+    # Handle lora_config section
+    if 'lora_config' in yaml_config:
+        lora_config = yaml_config['lora_config']
+        if 'max_lora_rank' in lora_config:
+            setattr(args, 'lora_rank', lora_config['max_lora_rank'])
+
+    # Handle kv_cache_config section for dtype
+    if 'kv_cache_config' in yaml_config:
+        kv_cache_config = yaml_config['kv_cache_config']
+        if 'dtype' in kv_cache_config and not hasattr(args, 'dtype') or not args.dtype:
+            setattr(args, 'dtype', kv_cache_config['dtype'])
+
+    # Handle quant_config section for dtype
+    if 'quant_config' in yaml_config:
+        quant_config = yaml_config['quant_config']
+        if 'quant_algo' in quant_config and not hasattr(args, 'dtype') or not args.dtype:
+            # Map quantization algorithms to data types
+            quant_to_dtype = {
+                'fp8': 'fp8',
+                'fp16': 'fp16',
+                'bf16': 'bf16',
+                'fp32': 'fp32',
+                'int8': 'int8',
+                'int4': 'int4'
+            }
+            if quant_config['quant_algo'] in quant_to_dtype:
+                setattr(args, 'dtype', quant_to_dtype[quant_config['quant_algo']])
+
+    # Handle performance_options for parallelization (if needed)
+    if 'performance_options' in yaml_config:
+        perf_options = yaml_config['performance_options']
+        # These could be used for advanced parallelization settings
+        # For now, we'll just store them for potential future use
+        if not hasattr(args, 'performance_options'):
+            setattr(args, 'performance_options', perf_options)
+
+    # Handle decoding_config (store for potential future use)
+    if 'decoding_config' in yaml_config:
+        decoding_config = yaml_config['decoding_config']
+        if not hasattr(args, 'decoding_config'):
+            setattr(args, 'decoding_config', decoding_config)
+
+    # Handle enable_chunked_prefill (store for potential future use)
+    if 'enable_chunked_prefill' in yaml_config:
+        if not hasattr(args, 'enable_chunked_prefill'):
+            setattr(args, 'enable_chunked_prefill', yaml_config['enable_chunked_prefill'])
+
+    return args
 
 def format_memory_size(memory_gb: float) -> str:
     """Format memory size with appropriate unit"""
@@ -348,8 +452,9 @@ Examples:
   hf-vram-calc --model microsoft/DialoGPT-medium
   hf-vram-calc --model meta-llama/Llama-2-7b-hf
   hf-vram-calc --model mistralai/Mistral-7B-v0.1
-  hf-vram-calc --list-types  # show available data types and GPUs
+  hf-vram-calc --list_types  # show available data types and GPUs
   hf-vram-calc --model my-model --model_path /path/to/model/directory  # use local config file
+  hf-vram-calc --extra_llm_api_options config.yaml  # use YAML configuration file
         """
     )
 
@@ -438,6 +543,13 @@ Examples:
     )
 
     parser.add_argument(
+        "--extra_llm_api_options",
+        type=str,
+        default=None,
+        help="Path to a YAML file that overwrites the parameters specified by hf-vram-calc."
+    )
+
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
@@ -445,6 +557,17 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # Load and apply YAML overrides if provided
+    if args.extra_llm_api_options:
+        try:
+            console.print(f"📄 Loading configuration from {args.extra_llm_api_options}...")
+            yaml_config = load_yaml_config(args.extra_llm_api_options)
+            args = apply_yaml_overrides(args, yaml_config)
+            console.print("[dim]YAML configuration applied successfully[/dim]")
+        except Exception as e:
+            console.print(f"[bold red]❌ Error loading YAML config:[/bold red] {e}")
+            sys.exit(1)
 
     try:
         # Initialize configuration manager
