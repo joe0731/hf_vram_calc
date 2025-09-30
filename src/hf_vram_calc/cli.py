@@ -4,9 +4,10 @@ Command-line interface for HF VRAM Calculator.
 
 import argparse
 import sys
+import json
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from rich.console import Console
 from rich.table import Table
@@ -127,6 +128,68 @@ def apply_yaml_overrides(args: argparse.Namespace, yaml_config: Dict[str, Any]) 
             setattr(args, 'enable_chunked_prefill', yaml_config['enable_chunked_prefill'])
 
     return args
+
+
+def serialize_results_to_json(
+    config: ModelConfig,
+    memory_results: List[LlmodelMemoryResult],
+    args: argparse.Namespace,
+    num_params: int
+) -> Dict[str, Any]:
+    """Serialize calculation results to JSON format"""
+
+    # Get the first memory result (or preferred dtype)
+    preferred_result = None
+    for result in memory_results:
+        if result.dtype in ['bf16', 'fp16', 'fp32']:
+            preferred_result = result
+            break
+
+    if preferred_result is None:
+        preferred_result = memory_results[0]
+
+    # Convert torch dtype to string if it exists
+    torch_dtype_str = str(config.torch_dtype) if config.torch_dtype else None
+    recommended_dtype_str = str(config.recommended_dtype) if config.recommended_dtype else None
+
+    # Simple JSON structure with only essential information
+    json_output = {
+        "model": {
+            "name": config.model_name,
+            "architecture": config.model_type,
+            "parameters": num_params,
+            "parameters_formatted": format_parameters(num_params),
+            "original_torch_dtype": torch_dtype_str,
+            "user_specified_dtype": args.dtype.upper() if args.dtype else None
+        },
+        "memory_requirements": {
+            "dtype": preferred_result.dtype.upper(),
+            "batch_size": preferred_result.batch_size,
+            "sequence_length": preferred_result.sequence_length,
+            "lora_rank": preferred_result.lora_rank,
+            "model_size_gb": round(preferred_result.base_memory, 2),
+            "kv_cache_size_gb": round(preferred_result.kv_cache_memory, 2),
+            "inference_total_gb": round(preferred_result.inference_memory, 2),
+            "training_gb": round(preferred_result.training_memory, 2),
+            "lora_size_gb": round(preferred_result.lora_memory, 2)
+        }
+    }
+    return json_output
+
+def save_results_to_json(json_output: Dict[str, Any], output_path: str) -> None:
+    """Save JSON results to file"""
+    try:
+        output_file = Path(output_path)
+        # Create parent directories if they don't exist
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(json_output, f, indent=2, ensure_ascii=False)
+
+        console.print(f"💾 Results saved to: {output_path}")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error saving JSON file:[/bold red] {e}")
+        raise
 
 def format_memory_size(memory_gb: float) -> str:
     """Format memory size with appropriate unit"""
@@ -455,6 +518,7 @@ Examples:
   hf-vram-calc --list_types  # show available data types and GPUs
   hf-vram-calc --model my-model --model_path /path/to/model/directory  # use local config file
   hf-vram-calc --extra_llm_api_options config.yaml  # use YAML configuration file
+  hf-vram-calc --model mistralai/Mistral-7B-v0.1 --output_json results.json  # save results to JSON file
         """
     )
 
@@ -547,6 +611,13 @@ Examples:
         type=str,
         default=None,
         help="Path to a YAML file that overwrites the parameters specified by hf-vram-calc."
+    )
+
+    parser.add_argument(
+        "--output_json",
+        type=str,
+        default=None,
+        help="Path to save the calculation results as a JSON file"
     )
 
     parser.add_argument(
@@ -657,6 +728,12 @@ Examples:
         # Print results
         print_results(config, memory_results, verbose=(args.log_level == "verbose"))
         
+        # Save results to JSON if requested
+        if args.output_json:
+            console.print("📄 Serializing results to JSON...")
+            json_output = serialize_results_to_json(config, memory_results, args, num_params)
+            save_results_to_json(json_output, args.output_json)
+
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
         sys.exit(1)
