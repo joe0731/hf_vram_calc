@@ -396,6 +396,27 @@ Examples:
     )
 
     parser.add_argument(
+        "--tp",
+        type=int,
+        default=1,
+        help="tensor parallelism size (default: 1)"
+    )
+
+    parser.add_argument(
+        "--pp",
+        type=int,
+        default=1,
+        help="pipeline parallelism size (default: 1)"
+    )
+
+    parser.add_argument(
+        "--ep",
+        type=int,
+        default=1,
+        help="expert parallelism size (default: 1)"
+    )
+
+    parser.add_argument(
         "--log_level",
         type=str,
         choices=["info", "verbose"],
