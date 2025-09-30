@@ -138,21 +138,27 @@ def serialize_results_to_json(
 ) -> Dict[str, Any]:
     """Serialize calculation results to JSON format"""
 
-    # Get the first memory result (or preferred dtype)
-    preferred_result = None
-    for result in memory_results:
-        if result.dtype in ['bf16', 'fp16', 'fp32']:
-            preferred_result = result
-            break
-
-    if preferred_result is None:
-        preferred_result = memory_results[0]
-
     # Convert torch dtype to string if it exists
     torch_dtype_str = str(config.torch_dtype) if config.torch_dtype else None
     recommended_dtype_str = str(config.recommended_dtype) if config.recommended_dtype else None
 
-    # Simple JSON structure with only essential information
+    # Prepare memory requirements for all data types
+    memory_requirements = []
+    for result in memory_results:
+        memory_req = {
+            "dtype": result.dtype.upper(),
+            "batch_size": result.batch_size,
+            "sequence_length": result.sequence_length,
+            "lora_rank": result.lora_rank,
+            "model_size_gb": round(result.base_memory, 2),
+            "kv_cache_size_gb": round(result.kv_cache_memory, 2),
+            "inference_total_gb": round(result.inference_memory, 2),
+            "training_gb": round(result.training_memory, 2),
+            "lora_size_gb": round(result.lora_memory, 2)
+        }
+        memory_requirements.append(memory_req)
+
+    # Simple JSON structure with all data types
     json_output = {
         "model": {
             "name": config.model_name,
@@ -162,17 +168,7 @@ def serialize_results_to_json(
             "original_torch_dtype": torch_dtype_str,
             "user_specified_dtype": args.dtype.upper() if args.dtype else None
         },
-        "memory_requirements": {
-            "dtype": preferred_result.dtype.upper(),
-            "batch_size": preferred_result.batch_size,
-            "sequence_length": preferred_result.sequence_length,
-            "lora_rank": preferred_result.lora_rank,
-            "model_size_gb": round(preferred_result.base_memory, 2),
-            "kv_cache_size_gb": round(preferred_result.kv_cache_memory, 2),
-            "inference_total_gb": round(preferred_result.inference_memory, 2),
-            "training_gb": round(preferred_result.training_memory, 2),
-            "lora_size_gb": round(preferred_result.lora_memory, 2)
-        }
+        "memory_requirements": memory_requirements
     }
     return json_output
 
@@ -512,13 +508,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  hf-vram-calc --model microsoft/DialoGPT-medium
-  hf-vram-calc --model meta-llama/Llama-2-7b-hf
   hf-vram-calc --model mistralai/Mistral-7B-v0.1
-  hf-vram-calc --list_types  # show available data types and GPUs
   hf-vram-calc --model my-model --model_path /path/to/model/directory  # use local config file
-  hf-vram-calc --extra_llm_api_options config.yaml  # use YAML configuration file
-  hf-vram-calc --model mistralai/Mistral-7B-v0.1 --output_json results.json  # save results to JSON file
+  hf-vram-calc --extra_llm_api_options example_config.yaml  # use YAML configuration file
+  hf-vram-calc --extra_llm_api_options example_config.yaml  --output_json results.json  # save results to JSON file
         """
     )
 
