@@ -352,42 +352,49 @@ Examples:
   hf-vram-calc --model my-model --model_path /path/to/model/directory  # use local config file
         """
     )
-    
+
     parser.add_argument(
         "--model",
         type=str,
         default=None,
         help="Hugging Face model name (e.g., microsoft/DialoGPT-medium)"
     )
-    
+
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default=None,
+        help="path to model directory containing config.json file instead of fetching from Hugging Face"
+    )
+
     parser.add_argument(
         "--dtype",
         type=str,
         default=None,
         help="specific data type(s) to calculate (comma-separated for multiple, e.g., fp16,bf16, default: use recommended dtype)"
     )
-    
+
     parser.add_argument(
         "--max_batch_size",
         type=int,
         default=1,
         help="batch size for activation memory estimation (default: 1)"
     )
-    
+
     parser.add_argument(
         "--max_seq_len",
         type=int,
         default=2048,
         help="sequence length for activation memory estimation (default: 2048)"
     )
-    
+
     parser.add_argument(
-        "--lora-rank",
+        "--lora_rank",
         type=int,
         default=64,
         help="LoRA rank for fine-tuning memory estimation (default: 64)"
     )
-    
+
     parser.add_argument(
         "--log_level",
         type=str,
@@ -395,27 +402,20 @@ Examples:
         default="info",
         help="log level for output (default: info, verbose shows detailed parallelization strategies and recommendations)"
     )
-    
+
     parser.add_argument(
-        "--list-types",
+        "--list_types",
         action="store_true",
         help="list all available data types and GPU types"
     )
 
     parser.add_argument(
-        "--config-dir",
+        "--config_dir",
         type=str,
         default=None,
         help="path to custom data_types.json, gpu_types.json, and display_settings.json (default: use config in this repo)"
     )
-    
-    parser.add_argument(
-        "--model_path",
-        type=str,
-        default=None,
-        help="path to model directory containing config.json file instead of fetching from Hugging Face"
-    )
-    
+
     parser.add_argument(
         "--version",
         action="version",
@@ -424,7 +424,7 @@ Examples:
     )
 
     args = parser.parse_args()
-    
+
     try:
         # Initialize configuration manager
         config_manager = ConfigManager(args.config_dir)

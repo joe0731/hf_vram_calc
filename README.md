@@ -146,7 +146,7 @@ hf-vram-calc --help
 ### Memory Estimation Parameters
 - `--batch-size BATCH_SIZE`: Batch size for activation estimation (default: 1)
 - `--sequence-length SEQUENCE_LENGTH`: Sequence length for memory calculation (default: 2048)  
-- `--lora-rank LORA_RANK`: LoRA rank for fine-tuning estimation (default: 64)
+- `--lora_rank LORA_RANK`: LoRA rank for fine-tuning estimation (default: 64)
 
 ### Display & Configuration
 - `--verbose`: Show detailed parallelization and GPU compatibility (default: disabled)
