@@ -345,17 +345,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  hf-vram-calc microsoft/DialoGPT-medium
-  hf-vram-calc meta-llama/Llama-2-7b-hf
-  hf-vram-calc mistralai/Mistral-7B-v0.1
+  hf-vram-calc --model microsoft/DialoGPT-medium
+  hf-vram-calc --model meta-llama/Llama-2-7b-hf
+  hf-vram-calc --model mistralai/Mistral-7B-v0.1
   hf-vram-calc --list-types  # show available data types and GPUs
-  hf-vram-calc my-model --local-config /path/to/config.json  # use local config file
+  hf-vram-calc --model my-model --model_path /path/to/model/directory  # use local config file
         """
     )
     
     parser.add_argument(
-        "model_name",
-        nargs="?",
+        "--model",
+        type=str,
+        default=None,
         help="Hugging Face model name (e.g., microsoft/DialoGPT-medium)"
     )
     
@@ -367,14 +368,14 @@ Examples:
     )
     
     parser.add_argument(
-        "--batch-size",
+        "--max_batch_size",
         type=int,
         default=1,
         help="batch size for activation memory estimation (default: 1)"
     )
     
     parser.add_argument(
-        "--sequence-length",
+        "--max_seq_len",
         type=int,
         default=2048,
         help="sequence length for activation memory estimation (default: 2048)"
@@ -388,10 +389,11 @@ Examples:
     )
     
     parser.add_argument(
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="show detailed parallelization strategies and recommendations"
+        "--log_level",
+        type=str,
+        choices=["info", "verbose"],
+        default="info",
+        help="log level for output (default: info, verbose shows detailed parallelization strategies and recommendations)"
     )
     
     parser.add_argument(
@@ -408,10 +410,10 @@ Examples:
     )
     
     parser.add_argument(
-        "--local-config",
+        "--model_path",
         type=str,
         default=None,
-        help="path to local model config.json file instead of fetching from Hugging Face"
+        help="path to model directory containing config.json file instead of fetching from Hugging Face"
     )
     
     parser.add_argument(
@@ -436,18 +438,18 @@ Examples:
             return
         
         # Check if model name is provided
-        if not args.model_name:
-            console.print("[bold red]❌ Error:[/bold red] model_name is required unless using --list-types")
+        if not args.model:
+            console.print("[bold red]❌ Error:[/bold red] --model is required unless using --list-types")
             parser.print_help()
             sys.exit(1)
 
         # Fetch config
-        console.print(f"🔍 Fetching configuration for {args.model_name}...")
-        config_path = ConfigParser.fetch_config(args.model_name, args.local_config)
+        console.print(f"🔍 Fetching configuration for {args.model}...")
+        config_path = ConfigParser.fetch_config(args.model, args.model_path)
 
         # Parse config
         console.print("📋 Parsing model configuration...")
-        config = ConfigParser.parse_config(config_path, args.model_name)
+        config = ConfigParser.parse_config(config_path, args.model)
 
         # Calculate parameters
         console.print("🧮 Calculating model parameters...")
@@ -502,14 +504,14 @@ Examples:
         for dtype in dtypes_to_calculate:
             memory_result = LlmodelMemoryResult(
                 dtype=dtype,
-                batch_size=args.batch_size,
-                sequence_length=args.sequence_length,
+                batch_size=args.max_batch_size,
+                sequence_length=args.max_seq_len,
                 lora_rank=args.lora_rank
             )
             memory_result.calculate_all(config, num_params, vram_calc)
             memory_results.append(memory_result)
         # Print results
-        print_results(config, memory_results, verbose=args.verbose)
+        print_results(config, memory_results, verbose=(args.log_level == "verbose"))
         
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")

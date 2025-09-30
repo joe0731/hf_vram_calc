@@ -162,24 +162,28 @@ class ConfigParser:
         return "fp16"
 
     @staticmethod
-    def fetch_config(model_name: str, local_config_path: Optional[str] = None) -> str:
+    def fetch_config(model_name: str, model_path: Optional[str] = None) -> str:
         """Fetch config.json and return the cached file path"""
         global_cache_dir = ConfigParser.get_global_cache_dir()
 
-        # Use local config if provided
-        if local_config_path:
+        # Use local model path if provided
+        if model_path:
             try:
-                config_path = Path(local_config_path)
+                model_dir = Path(model_path)
+                if not model_dir.exists():
+                    raise FileNotFoundError(f"model directory not found: {model_path}")
+                # Look for config.json in the model directory
+                config_path = model_dir / "config.json"
                 if not config_path.exists():
-                    raise FileNotFoundError(f"local config file not found: {local_config_path}")
+                    raise FileNotFoundError(f"config.json not found in model directory: {model_path}")
                 # Copy local config to global cache
                 cached_config_path = os.path.join(global_cache_dir, f"{model_name.replace('/', '_')}_config.json")
                 shutil.copy2(config_path, cached_config_path)
                 return cached_config_path
 
             except (json.JSONDecodeError, FileNotFoundError) as e:
-                raise RuntimeError(f"failed to load local config from '{local_config_path}': {e}.\n"
-                                 f"please check if your config json file format is correct and complete")
+                raise RuntimeError(f"failed to load local config from '{model_path}': {e}.\n"
+                                 f"please check if your model directory contains config.json and the file format is correct")
 
         # Check if config already exists in cache
         cached_config_path = os.path.join(global_cache_dir, f"{model_name.replace('/', '_')}_config.json")
@@ -221,19 +225,19 @@ class ConfigParser:
                     except requests.RequestException as retry_e:
                         error_msg = (
                             f"failed to fetch config for model '{model_name}' even with token: {retry_e}. "
-                            "Please check your token or try using --local-config option"
+                            "Please check your token or try using --model_path option"
                         )
                         raise RuntimeError(error_msg)
                 else:
                     error_msg = (
                         f"failed to fetch config for model '{model_name}': {e}. "
-                        "This model may require authentication. Please use --local-config option or run 'huggingface-cli login'"
+                        "This model may require authentication. Please use --model_path option or run 'huggingface-cli login'"
                     )
                     raise RuntimeError(error_msg)
             else:
                 error_msg = (
                     f"failed to fetch config for model '{model_name}': {e}. "
-                    "Please check network connection or try using --local-config option"
+                    "Please check network connection or try using --model_path option"
                 )
                 raise RuntimeError(error_msg)
 
