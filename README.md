@@ -94,41 +94,55 @@ hf auth login --token yourtoken --add-to-git-credential
 
 ```bash
 # Automatic dtype recommendation from model config/name
-hf-vram-calc microsoft/DialoGPT-medium
-
-# Model name contains dtype - automatically detects fp16
-hf-vram-calc nvidia/DeepSeek-R1-0528-FP4
+hf-vram-calc --model mistralai/Mistral-7B-v0.1
 ```
 
 ### Specify Data Type Override
 
 ```bash
 # Override with specific data type
-hf-vram-calc meta-llama/Llama-2-7b-hf --dtype bf16
-hf-vram-calc mistralai/Mistral-7B-v0.1 --dtype bf16,fp8
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype bf16
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype bf16,fp8
 ```
 
 ### Advanced Configuration
 
 ```bash
 # Custom batch size and sequence length
-hf-vram-calc mistralai/Mistral-7B-v0.1 --batch-size 4 --sequence-length 4096
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --max_batch_size 4 --max_seq_len 4096
 
 # Custom LoRA rank for fine-tuning estimation  
-hf-vram-calc microsoft/DialoGPT-medium --lora-rank 128
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --lora_rank 128
 
 # Detailed analysis (disabled by default)
-hf-vram-calc meta-llama/Llama-2-7b-hf --verbose
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --log_level verbose
+```
+
+### YAML Configuration
+
+```bash
+# Use YAML configuration file (trtllm-bench compatible)
+hf-vram-calc --extra_llm_api_options example_config.yaml
+
+# Override YAML with command line arguments
+hf-vram-calc --extra_llm_api_options  example_config.yaml --max_batch_size 128
+```
+
+### JSON Output
+
+```bash
+# Save results to JSON file
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype bf16,fp8 --output_json results.json
 ```
 
 ### System Information
 
 ```bash
 # List all available data types and GPU models
-hf-vram-calc --list-types
+hf-vram-calc --list_types
 
 # Use custom configuration directory
-hf-vram-calc --config-dir ./my_config microsoft/DialoGPT-medium
+hf-vram-calc --config_dir ./my_config --model mistralai/Mistral-7B-v0.1
 
 # Show help
 hf-vram-calc --help
@@ -137,25 +151,34 @@ hf-vram-calc --help
 ## Command Line Arguments
 
 ### Required
-- `model_name`: Hugging Face model name (e.g., `microsoft/DialoGPT-medium`)
+- `--model MODEL`: Hugging Face model name (e.g., `mistralai/Mistral-7B-v0.1`)
 
 ### Data Type Control  
 - `--dtype {fp32,fp16,bf16,fp8,int8,int4,mxfp4,nvfp4,awq_int4,fp4,nf4,gptq_int4}`: Override automatic dtype detection
-- `--list-types`: List all available data types and GPU models
+- `--list_types`: List all available data types and GPU models
 
 ### Memory Estimation Parameters
-- `--batch-size BATCH_SIZE`: Batch size for activation estimation (default: 1)
-- `--sequence-length SEQUENCE_LENGTH`: Sequence length for memory calculation (default: 2048)  
+- `--max_batch_size BATCH_SIZE`: Batch size for activation estimation (default: 1)
+- `--max_seq_len SEQUENCE_LENGTH`: Sequence length for memory calculation (default: 2048)  
 - `--lora_rank LORA_RANK`: LoRA rank for fine-tuning estimation (default: 64)
 
-### Display & Configuration
-- `--verbose`: Show detailed parallelization and GPU compatibility (default: disabled)
-- `--config-dir CONFIG_DIR`: Custom configuration directory path
+### Parallelization Settings
+- `--tp TP`: Tensor parallelism size (default: 1)
+- `--pp PP`: Pipeline parallelism size (default: 1)
+- `--ep EP`: Expert parallelism size (default: 1)
+
+### Configuration & Output
+- `--model_path MODEL_PATH`: Path to local model directory containing config.json
+- `--extra_llm_api_options YAML_FILE`: Path to YAML configuration file (trtllm-bench compatible)
+- `--output_json JSON_FILE`: Path to save results as JSON file
+- `--log_level {info,verbose}`: Log level for output (default: info)
+- `--config_dir CONFIG_DIR`: Custom configuration directory path
 - `--help`: Show complete help message with examples
 
 ### Smart Behavior
 - **No `--dtype`**: Uses intelligent priority (model name → config → fp16 default)
 - **With `--dtype`**: Overrides automatic detection with specified type
+- **YAML + CLI**: Command line arguments override YAML configuration
 - **Invalid model**: Graceful error handling with helpful suggestions
 
 ## Quick Start Examples
@@ -165,25 +188,30 @@ hf-vram-calc --help
 hf auth login --token yourtoken --add-to-git-credential
 
 # Estimate memory for different models
-hf-vram-calc microsoft/DialoGPT-medium              # → 0.9GB inference (FP16)
-hf-vram-calc meta-llama/Llama-2-7b-hf              # → ~13GB inference  
-hf-vram-calc nvidia/DeepSeek-R1-0528-FP4           # → Auto-detects FP4 from name
+hf-vram-calc --model mistralai/Mistral-7B-v0.1              # → ~14GB inference (BF16)
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype fp16 # → ~14GB inference (FP16)
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype fp8  # → ~7GB inference (FP8)
 
 # estimate size for specified quantization versions
-hf-vram-calc meta-llama/Llama-2-7b-hf --dtype fp16     # → ~13GB
-hf-vram-calc meta-llama/Llama-2-7b-hf --dtype int4     # → ~3.5GB  
-hf-vram-calc meta-llama/Llama-2-7b-hf --dtype awq_int4 # → ~3.5GB
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype fp16     # → ~14GB
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype int4     # → ~3.5GB  
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --dtype awq_int4 # → ~3.5GB
 
 # for private access models, it is recommended to use --model_path
-hf-vram-calc meta-llama/Llama-4-Scout-17B-16E-Instruct --model_path /llm_data/llm-models/Llama-4-Scout-17B-16E-Instruct
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --model_path /llm_data/llm-models/Mistral-7B-v0.1
 
 # Find optimal parallelization strategy
-hf-vram-calc mistralai/Mistral-7B-v0.1 --log_level verbose  # → TP/PP recommendations
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --log_level verbose  # → TP/PP recommendations
+
+# Save results to JSON
+hf-vram-calc --model mistralai/Mistral-7B-v0.1 --output_json results.json
+
+# Use YAML configuration (trtllm-bench compatible)
+hf-vram-calc --extra_llm_api_options config.yaml
 
 # Check what's available
-hf-vram-calc --list-types                               # → All types & GPUs
+hf-vram-calc --list_types                               # → All types & GPUs
 ```
-
 ## Data Type Priority & Detection
 
 ### Automatic Data Type Recommendation
@@ -218,6 +246,82 @@ The tool uses intelligent priority-based dtype selection:
 | **nf4**   | 0.5 | 4-bit NormalFloat | `nf4`, `bnb-4bit` |
 | **fp4**   | 0.5 | 4-bit floating point | `fp4` |
 
+## YAML Configuration (trtllm-bench Compatible)
+
+The `--extra_llm_api_options` argument allows you to use YAML configuration files with the same hierarchical structure as trtllm-bench:
+
+```yaml
+# config.yaml
+model: "mistralai/Mistral-7B-v0.1"
+kv_cache_config:
+  dtype: "fp8"
+  mamba_ssm_cache_dtype: "fp16"
+enable_chunked_prefill: true
+build_config:
+  max_batch_size: 64
+  max_num_tokens: 8192
+  max_seq_len: 4096
+quant_config:
+  quant_algo: "fp8"
+  kv_cache_quant_algo: "fp8"
+lora_config:
+  lora_dir: "/path/to/lora/weights"
+  max_lora_rank: 16
+performance_options:
+  cuda_graphs: true
+  multi_block_mode: true
+log_level: "verbose"
+```
+
+### YAML Section Mappings
+
+- `build_config.max_batch_size` → `--max_batch_size`
+- `build_config.max_seq_len` → `--max_seq_len`
+- `lora_config.max_lora_rank` → `--lora_rank`
+- `kv_cache_config.dtype` → `--dtype`
+- `quant_config.quant_algo` → `--dtype` (with algorithm-to-dtype mapping)
+
+## JSON Output
+
+The `--output_json` argument saves calculation results in a simplified JSON format:
+
+```json
+{
+  "model": {
+    "name": "mistralai/Mistral-7B-v0.1",
+    "architecture": "mistral",
+    "parameters": 7241732096,
+    "parameters_formatted": "7.24B",
+    "original_torch_dtype": "torch.bfloat16",
+    "user_specified_dtype": "FP8,BF16"
+  },
+  "memory_requirements": [
+    {
+      "dtype": "FP8",
+      "batch_size": 1,
+      "sequence_length": 2048,
+      "lora_rank": 64,
+      "model_size_gb": 6.75,
+      "kv_cache_size_gb": 0.13,
+      "inference_total_gb": 8.10,
+      "training_gb": 35.07,
+      "lora_size_gb": 8.37
+    },
+    {
+      "dtype": "BF16",
+      "batch_size": 1,
+      "sequence_length": 2048,
+      "lora_rank": 64,
+      "model_size_gb": 13.49,
+      "kv_cache_size_gb": 0.25,
+      "inference_total_gb": 16.19,
+      "training_gb": 70.14,
+      "lora_size_gb": 16.73
+    }
+  ]
+}
+```
+
 ## Parallelization Strategies
 
 ### Tensor Parallelism (TP)
@@ -237,24 +341,24 @@ Each GPU holds a complete model copy, only splitting data.
 ### Smart Dtype Detection Example
 
 ```bash
-$ hf-vram-calc microsoft/DialoGPT-medium --verbose
+$ hf-vram-calc --model mistralai/Mistral-7B-v0.1 --log_level verbose
 ```
 
 ```
 Using recommended data type: FP16
-Use --dtype to specify different type, or see --list-types for all options
-  🔍 Fetching configuration for microsoft/DialoGPT-medium...
+Use --dtype to specify different type, or see --list_types for all options
+  🔍 Fetching configuration for mistralai/Mistral-7B-v0.1...
 Using recommended data type: FP16
-Use --dtype to specify different type, or see --list-types for all options
+Use --dtype to specify different type, or see --list_types for all options
   📋 Parsing model configuration...                         
   🧮 Calculating model parameters...                        
   💾 Computing memory requirements...                       
 
                           ╭─────── 🤖 Model Information ───────╮
                           │                                    │
-                          │  Model: microsoft/DialoGPT-medium  │
-                          │  Architecture: gpt2                │
-                          │  Parameters: 406,286,336 (406.3M)  │
+                          │  Model: mistralai/Mistral-7B-v0.1  │
+                          │  Architecture: mistral             │
+                          │  Parameters: 7,241,732,096 (7.24B) │
                           │  Recommended dtype: FP16           │
                           │                                    │
                           ╰────────────────────────────────────╯
@@ -327,7 +431,7 @@ $ hf-vram-calc Qwen/Qwen-72B-Chat
 ### List Available Types
 
 ```bash
-$ hf-vram-calc --list-types
+$ hf-vram-calc --list_types
 ```
 
 ```

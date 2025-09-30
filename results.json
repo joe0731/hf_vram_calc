@@ -1,0 +1,23 @@
+{
+  "model": {
+    "name": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "architecture": "llama4_text",
+    "parameters": 107769861120,
+    "parameters_formatted": "108B",
+    "original_torch_dtype": "torch.bfloat16",
+    "user_specified_dtype": "FP8"
+  },
+  "memory_requirements": [
+    {
+      "dtype": "FP8",
+      "batch_size": 4,
+      "sequence_length": 4096,
+      "lora_rank": 16,
+      "model_size_gb": 100.37,
+      "kv_cache_size_gb": 1.5,
+      "inference_total_gb": 120.44,
+      "training_gb": 521.92,
+      "lora_size_gb": 122.46
+    }
+  ]
+}
