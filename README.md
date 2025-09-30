@@ -174,11 +174,11 @@ hf-vram-calc meta-llama/Llama-2-7b-hf --dtype fp16     # → ~13GB
 hf-vram-calc meta-llama/Llama-2-7b-hf --dtype int4     # → ~3.5GB  
 hf-vram-calc meta-llama/Llama-2-7b-hf --dtype awq_int4 # → ~3.5GB
 
-# for private access models, it is recommended to use --local-config
-hf-vram-calc meta-llama/Llama-4-Scout-17B-16E-Instruct --local-config config.json
+# for private access models, it is recommended to use --model_path
+hf-vram-calc meta-llama/Llama-4-Scout-17B-16E-Instruct --model_path /llm_data/llm-models/Llama-4-Scout-17B-16E-Instruct
 
 # Find optimal parallelization strategy
-hf-vram-calc mistralai/Mistral-7B-v0.1 --verbose  # → TP/PP recommendations
+hf-vram-calc mistralai/Mistral-7B-v0.1 --log_level verbose  # → TP/PP recommendations
 
 # Check what's available
 hf-vram-calc --list-types                               # → All types & GPUs
