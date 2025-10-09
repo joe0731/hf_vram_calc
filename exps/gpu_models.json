@@ -1,0 +1,44 @@
+{
+    "A100": {
+      "arch_family": "ampere",
+      "vram_gb": 80,
+      "fp8_support": false,
+      "bf16_support": true
+    },
+    "L40S": {
+      "arch_family": "ada",
+      "vram_gb": 46,
+      "fp8_support": false,
+      "bf16_support": true
+    },
+    "H20": {
+      "arch_family": "hopper",
+      "vram_gb": 96,
+      "fp8_support": true,
+      "bf16_support": true
+    },
+    "B200": {
+      "arch_family": "blackwell",
+      "vram_gb": 180,
+      "fp8_support": true,
+      "bf16_support": true
+    },
+    "L20": {
+      "arch_family": "blackwell",
+      "vram_gb": 46,
+      "fp8_support": false,
+      "bf16_support": true
+    },
+    "RTX6000SE": {
+      "arch_family": "ada",
+      "vram_gb": 48,
+      "fp8_support": false,
+      "bf16_support": true
+    },
+    "H100": {
+      "arch_family": "hopper",
+      "vram_gb": 80,
+      "fp8_support": true,
+      "bf16_support": true
+    }
+  }
