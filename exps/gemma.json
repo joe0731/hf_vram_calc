@@ -1,0 +1,23 @@
+{
+  "model": {
+    "name": "google/gemma-3-27b-it",
+    "architecture": "gemma3_text",
+    "parameters": 28418976512,
+    "parameters_formatted": "28.4B",
+    "original_torch_dtype": "torch.bfloat16",
+    "user_specified_dtype": "FP8"
+  },
+  "memory_requirements": [
+    {
+      "dtype": "FP8",
+      "batch_size": 1,
+      "sequence_length": 2048,
+      "lora_rank": 64,
+      "model_size_gb": 26.47,
+      "kv_cache_size_gb": 0.64,
+      "inference_total_gb": 31.76,
+      "training_gb": 137.63,
+      "lora_size_gb": 33.89
+    }
+  ]
+}
