@@ -249,7 +249,7 @@ class ConfigParser:
             except Exception as local_error:
                 # If local loading fails (e.g., requires custom code), fall back to HuggingFace
                 # This allows models with custom code to be loaded with trust_remote_code
-                print(f"⚠️ Local config loading failed, fetching from HuggingFace: {local_error}")
+                print(f"⚠️ Local config loading failed, fetching from HuggingFace again")
                 cfg = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
 
             if hasattr(cfg, 'text_config'):
