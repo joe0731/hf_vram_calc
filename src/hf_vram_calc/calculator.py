@@ -117,8 +117,14 @@ class ParameterCalculator:
                 torch_dtype = getattr(torch, torch_dtype, torch.bfloat16)
 
             # Create empty model to get exact parameter count
-            with init_empty_weights():
-                model = AutoModelForCausalLM.from_config(test_config, dtype=torch_dtype)
+            try:
+                with init_empty_weights():
+                    model = AutoModelForCausalLM.from_config(test_config, torch_dtype=torch_dtype)
+            except Exception as e:
+                # If empty weights initialization fails, fall back to default initialization
+                print(f"Warning: Maybe transformers compatibility issue for {config.model_name}: {e}")
+                print(f"Please try to use pip install transformers=={config.transformers_version} or pip install --upgrade transformers")
+                return None
 
             # Count total parameters
             total_params = 0
@@ -130,7 +136,6 @@ class ParameterCalculator:
         except Exception as e:
             # If accurate method fails, fall back to mathematical estimation
             print(f"Warning: Accurate parameter calculation failed for {config.model_name}: {e}")
-            print("Falling back to mathematical estimation...")
             return None
 
     @staticmethod
@@ -174,7 +179,7 @@ class VRAMCalculator:
         """Calculate model weights memory in GB"""
         bytes_per_param = self.get_dtype_size(dtype)
         total_bytes = num_params * bytes_per_param
-        return total_bytes / (1024 ** 3)  # convert to GB
+        return total_bytes / (1024 ** 3)  # convert to GiB
     
     def calculate_kv_cache_memory(self, config: ModelConfig, dtype: str, batch_size: int = 1,
                                  sequence_length: int = 2048) -> float:

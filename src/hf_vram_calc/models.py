@@ -14,6 +14,7 @@ class ModelConfig:
     hidden_size: int
     num_layers: int
     num_attention_heads: int
+    transformers_version: Optional[str] = None
     intermediate_size: Optional[int] = None
     num_key_value_heads: Optional[int] = None
     max_position_embeddings: Optional[int] = None

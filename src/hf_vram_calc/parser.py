@@ -243,8 +243,15 @@ class ConfigParser:
     def parse_config(config_path: str, model_name: str) -> ModelConfig:
         """Parse config file into ModelConfig"""
         try:
-            # Load config from AutoConfig
-            cfg = AutoConfig.from_pretrained(config_path, local_files_only=True)
+            # Try to load config from local cache first
+            try:
+                cfg = AutoConfig.from_pretrained(config_path, local_files_only=True)
+            except Exception as local_error:
+                # If local loading fails (e.g., requires custom code), fall back to HuggingFace
+                # This allows models with custom code to be loaded with trust_remote_code
+                print(f"⚠️ Local config loading failed, fetching from HuggingFace: {local_error}")
+                cfg = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+
             if hasattr(cfg, 'text_config'):
                 text_config = cfg.text_config
                 # This model config is MOE, using text_config
@@ -280,6 +287,7 @@ class ConfigParser:
                 num_layers=num_layers,
                 num_attention_heads=num_attention_heads,
                 intermediate_size=intermediate_size,
+                transformers_version=ConfigParser.safe_get(text_config, "transformers_version"),
                 num_key_value_heads=ConfigParser.safe_get(text_config, "num_key_value_heads"),
                 max_position_embeddings=ConfigParser.safe_get(text_config, "max_position_embeddings", "n_positions"),
                 rope_theta=ConfigParser.safe_get(text_config, "rope_theta"),
