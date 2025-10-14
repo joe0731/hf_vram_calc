@@ -121,7 +121,6 @@ class ParameterCalculator:
                 with init_empty_weights():
                     model = AutoModelForCausalLM.from_config(test_config, torch_dtype=torch_dtype)
             except Exception as e:
-                # If empty weights initialization fails, fall back to default initialization
                 print(f"Warning: Maybe transformers compatibility issue for {config.model_name}: {e}")
                 print(f"Please try to use pip install transformers=={config.transformers_version} or pip install --upgrade transformers")
                 return None
