@@ -165,6 +165,9 @@ class ConfigParser:
     def fetch_config(model_name: str, model_path: Optional[str] = None) -> str:
         """Fetch config.json and return the cached file path"""
         global_cache_dir = ConfigParser.get_global_cache_dir()
+        model_cache_dir = os.path.join(global_cache_dir, model_name)
+        os.makedirs(model_cache_dir, exist_ok=True)
+        cached_config_path = os.path.join(model_cache_dir, "config.json")
 
         # Use local model path if provided
         if model_path:
@@ -177,7 +180,6 @@ class ConfigParser:
                 if not config_path.exists():
                     raise FileNotFoundError(f"config.json not found in model directory: {model_path}")
                 # Copy local config to global cache
-                cached_config_path = os.path.join(global_cache_dir, f"{model_name.replace('/', '_')}_config.json")
                 shutil.copy2(config_path, cached_config_path)
                 return cached_config_path
 
@@ -186,7 +188,6 @@ class ConfigParser:
                                  f"please check if your model directory contains config.json and the file format is correct")
 
         # Check if config already exists in cache
-        cached_config_path = os.path.join(global_cache_dir, f"{model_name.replace('/', '_')}_config.json")
         if os.path.exists(cached_config_path):
             return cached_config_path
 
@@ -203,8 +204,6 @@ class ConfigParser:
 
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
-
-            # Save config to cache
             with open(cached_config_path, 'w', encoding='utf-8') as f:
                 json.dump(response.json(), f, indent=2)
             return cached_config_path
@@ -218,7 +217,6 @@ class ConfigParser:
                     try:
                         response = requests.get(url, headers=headers, timeout=10)
                         response.raise_for_status()
-                        # Save config to cache
                         with open(cached_config_path, 'w', encoding='utf-8') as f:
                             json.dump(response.json(), f, indent=2)
                         return cached_config_path
