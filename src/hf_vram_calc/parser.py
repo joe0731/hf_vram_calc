@@ -296,3 +296,88 @@ class ConfigParser:
             )
         except KeyError as e:
             raise ValueError(f"missing required config field: {e}")
+
+    @staticmethod
+    def load_and_parse_config(model_name: str, model_path: Optional[str] = None) -> ModelConfig:
+        # Use local model path if provided
+        cfg = None
+        print(f" 🔍 Step 1: Fetching configuration : {model_name}")
+        if model_path:
+            print(f" Fetching configuration from local path: {model_path}")
+            model_dir = Path(model_path)
+            if model_dir.exists():
+                config_path = model_dir / "config.json"
+                if config_path.exists():
+                    try:
+                        cfg = AutoConfig.from_pretrained(model_path, local_files_only=True)
+                    except Exception as e:
+                        print(f" Warning: Failed to load from local path: {e}")
+                        print(f" Warning: Falling back to HuggingFace...")
+                        cfg = None
+
+        if cfg is None:
+            print(f" Fetching configuration from HuggingFace: {model_name}")
+            try:
+                cfg = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+            except Exception as e:
+                print(f"try again with hf token...")
+                token = ConfigParser._get_token()
+                if token is None:
+                    token = ConfigParser._request_token_interactively()
+                try:
+                    cfg = AutoConfig.from_pretrained(model_name, trust_remote_code=True, token=token)
+                except Exception as e:
+                    error_msg = (
+                        f"failed to fetch config for model '{model_name}': {e}. "
+                        "Please check network connection or try using --model_path option"
+                    )
+                    raise ValueError(error_msg)
+
+        # parse config
+        print(f" 🔍 Step 2: Parsing configuration: {model_name}")
+        try:
+            if hasattr(cfg, 'text_config'):
+                text_config = cfg.text_config
+                # This model config is MOE, using text_config
+            else:
+                text_config = cfg
+                # This model config is a causal model, using root config
+
+            hidden_size = ConfigParser.safe_get(text_config, "hidden_size", "n_embd", "d_model")
+            num_layers = ConfigParser.safe_get(text_config, "num_hidden_layers", "num_layers", "n_layer", "n_layers")
+            num_attention_heads = ConfigParser.safe_get(text_config, "num_attention_heads", "n_head", "num_heads")
+            intermediate_size = ConfigParser.safe_get(text_config, "intermediate_size", "n_inner", "d_ff")
+
+            if not all([hidden_size, num_layers, num_attention_heads]):
+                missing_fields = []
+                if not hidden_size:
+                    missing_fields.append("hidden_size/n_embd/d_model")
+                if not num_layers:
+                    missing_fields.append("num_hidden_layers/num_layers/n_layer")
+                if not num_attention_heads:
+                    missing_fields.append("num_attention_heads/n_head")
+                raise ValueError(f"missing required config fields: {missing_fields}")
+
+            # Extract torch_dtype and determine recommended data type
+            # For multimodal models, prefer text_config torch_dtype, fallback to root
+            torch_dtype = ConfigParser.safe_get(text_config, "torch_dtype") or ConfigParser.safe_get(cfg, "torch_dtype")
+            recommended_dtype = ConfigParser.map_torch_dtype_to_our_dtype(torch_dtype, model_name)
+
+            return ModelConfig(
+                model_name=model_name,
+                model_type=ConfigParser.safe_get(text_config, "model_type"),
+                vocab_size=ConfigParser.safe_get(text_config, "vocab_size"),
+                hidden_size=hidden_size,
+                num_layers=num_layers,
+                num_attention_heads=num_attention_heads,
+                intermediate_size=intermediate_size,
+                transformers_version=ConfigParser.safe_get(text_config, "transformers_version"),
+                num_key_value_heads=ConfigParser.safe_get(text_config, "num_key_value_heads"),
+                max_position_embeddings=ConfigParser.safe_get(text_config, "max_position_embeddings", "n_positions"),
+                rope_theta=ConfigParser.safe_get(text_config, "rope_theta"),
+                torch_dtype=torch_dtype,
+                recommended_dtype=recommended_dtype,
+                test_config=text_config # to save the original test config
+            )
+        except KeyError as e:
+            raise ValueError(f"missing required config field: {e}")

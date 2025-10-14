@@ -650,14 +650,9 @@ Examples:
             console.print("[bold red]❌ Error:[/bold red] --model is required unless using --list-types")
             parser.print_help()
             sys.exit(1)
-
-        # Fetch config
-        console.print(f"🔍 Fetching configuration for {args.model}...")
-        config_path = ConfigParser.fetch_config(args.model, args.model_path)
-
-        # Parse config
-        console.print("📋 Parsing model configuration...")
-        config = ConfigParser.parse_config(config_path, args.model)
+ 
+        console.print(f"🔍 Fetching & parsing configuration for {args.model}...")
+        config = ConfigParser.load_and_parse_config(args.model, args.model_path)
 
         # Calculate parameters
         console.print("🧮 Calculating model parameters...")
