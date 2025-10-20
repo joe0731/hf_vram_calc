@@ -13,11 +13,11 @@
       "batch_size": 1,
       "sequence_length": 2048,
       "lora_rank": 64,
-      "model_size_gb": 26.47,
-      "kv_cache_size_gb": 0.64,
-      "inference_total_gb": 31.76,
-      "training_gb": 137.63,
-      "lora_size_gb": 33.89
+      "model_size_gib": 26.47,
+      "kv_cache_size_gib": 0.64,
+      "inference_total_gib": 31.76,
+      "training_gib": 137.63,
+      "lora_size_gib": 33.89
     }
   ]
 }

@@ -48,10 +48,10 @@ python tools/decider.py --gpu_model L40S --num_gpus 2 --model google/gemma-3-27b
     "dtype": "FP8"
   },
   "calc": {
-    "memory_estimate_gb": 26.47,
-    "gpu_vram_gb": 46.0,
-    "per_gpu_required_gb": 13.23,
-    "ratio": 0.2877,
+    "memory_estimate_gib": 26.47,
+    "gpu_vram_gib": 42.84,
+    "per_gpu_required_gib": 13.23,
+    "ratio": 0.3087,
     "dtype_used": "FP8"
   }
 }

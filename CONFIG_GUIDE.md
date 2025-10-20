@@ -9,7 +9,6 @@ The system uses three independent JSON configuration files:
 ### 1. `data_types.json` - Data Type Configuration
 
 Used to define bytes per parameter for different data types:
-
 ```json
 {
   "fp32": {
@@ -36,12 +35,14 @@ Used to define GPU models and specifications:
   {
     "name": "RTX 4090",
     "memory_gb": 24,
+    "memory_gib": 22.35,
     "category": "consumer",
     "architecture": "Ada Lovelace"
   },
   {
     "name": "Your Custom GPU",
     "memory_gb": 32,
+    "memory_gib": 29.8,
     "category": "custom",
     "architecture": "Custom Arch"
   }
@@ -113,6 +114,7 @@ python3 vram_calculator.py --dtype my_new_format microsoft/DialoGPT-medium
 {
   "name": "RTX 5090",
   "memory_gb": 32,
+  "memory_gib": 29.8,
   "category": "consumer",
   "architecture": "Blackwell"
 }
@@ -234,10 +236,10 @@ Focus on common research GPUs:
   "max_gpu_display": 5,
   "preferred_categories": ["datacenter"],
   "gpu_types": [
-    {"name": "V100 32GB", "memory_gb": 32, "category": "datacenter"},
-    {"name": "A100 40GB", "memory_gb": 40, "category": "datacenter"},
-    {"name": "A100 80GB", "memory_gb": 80, "category": "datacenter"},
-    {"name": "H100 80GB", "memory_gb": 80, "category": "datacenter"}
+    {"name": "V100 32GB", "memory_gb": 32, "memory_gib": 29.8, "category": "datacenter"},
+    {"name": "A100 40GB", "memory_gb": 40, "memory_gib": 37.25, "category": "datacenter"},
+    {"name": "A100 80GB", "memory_gb": 80, "memory_gib": 74.51, "category": "datacenter"},
+    {"name": "H100 80GB", "memory_gb": 80, "memory_gib": 74.51, "category": "datacenter"}
   ]
 }
 ```

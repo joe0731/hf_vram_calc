@@ -1,231 +1,268 @@
 [
-
   {
     "name": "RTX 5090",
     "memory_gb": 32,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 29.8
   },
   {
     "name": "RTX 5090D",
     "memory_gb": 32,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 29.8
   },
   {
     "name": "RTX 5080",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 5070 Ti",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 5070",
     "memory_gb": 12,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 11.18
   },
   {
     "name": "RTX 5060 Ti 16GB",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 5060 Ti 8GB",
     "memory_gb": 8,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 7.45
   },
   {
     "name": "RTX 5060",
     "memory_gb": 8,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 7.45
   },
   {
     "name": "RTX 5050",
     "memory_gb": 8,
     "category": "consumer",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 7.45
   },
   {
     "name": "RTX 4090",
     "memory_gb": 24,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 22.35
   },
   {
-    "name": "RTX 4080 Super", 
+    "name": "RTX 4080 Super",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 4080",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 4070 Ti Super",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 4070 Ti",
     "memory_gb": 12,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 11.18
   },
   {
     "name": "RTX 4070 Super",
     "memory_gb": 12,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 11.18
   },
   {
     "name": "RTX 4070",
     "memory_gb": 12,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 11.18
   },
   {
     "name": "RTX 4060 Ti",
     "memory_gb": 16,
     "category": "consumer",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 14.9
   },
   {
     "name": "RTX 3090 Ti",
     "memory_gb": 24,
     "category": "consumer",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 22.35
   },
   {
     "name": "RTX 3090",
     "memory_gb": 24,
     "category": "consumer",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 22.35
   },
   {
     "name": "RTX 3080 Ti",
     "memory_gb": 12,
     "category": "consumer",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 11.18
   },
   {
     "name": "A100 40GB",
     "memory_gb": 40,
     "category": "datacenter",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 37.25
   },
   {
     "name": "A100 80GB",
     "memory_gb": 80,
     "category": "datacenter",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 74.51
   },
   {
     "name": "H100 80GB",
     "memory_gb": 80,
     "category": "datacenter",
-    "architecture": "Hopper"
+    "architecture": "Hopper",
+    "memory_gib": 74.51
   },
   {
     "name": "H200 141GB",
     "memory_gb": 141,
     "category": "datacenter",
-    "architecture": "Hopper"
+    "architecture": "Hopper",
+    "memory_gib": 131.32
   },
   {
     "name": "H20 96GB",
     "memory_gb": 96,
     "category": "datacenter",
-    "architecture": "Hopper"
+    "architecture": "Hopper",
+    "memory_gib": 89.41
   },
   {
     "name": "B100 192GB",
     "memory_gb": 192,
     "category": "datacenter",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 178.81
   },
   {
     "name": "B200 192GB",
     "memory_gb": 192,
     "category": "datacenter",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 178.81
   },
   {
     "name": "B300 288B",
     "memory_gb": 288,
     "category": "datacenter",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 268.22
   },
   {
     "name": "GB300 288B",
     "memory_gb": 288,
     "category": "datacenter",
-    "architecture": "Blackwell"
+    "architecture": "Blackwell",
+    "memory_gib": 268.22
   },
   {
     "name": "A30",
     "memory_gb": 24,
     "category": "datacenter",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 22.35
   },
   {
     "name": "A10",
     "memory_gb": 24,
     "category": "datacenter",
-    "architecture": "Ampere"
+    "architecture": "Ampere",
+    "memory_gib": 22.35
   },
   {
     "name": "V100 32GB",
     "memory_gb": 32,
     "category": "datacenter",
-    "architecture": "Volta"
+    "architecture": "Volta",
+    "memory_gib": 29.8
   },
   {
     "name": "T4",
     "memory_gb": 16,
     "category": "datacenter",
-    "architecture": "Turing"
+    "architecture": "Turing",
+    "memory_gib": 14.9
   },
   {
     "name": "L40S",
     "memory_gb": 48,
     "category": "datacenter",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 44.7
   },
   {
     "name": "L40",
     "memory_gb": 48,
     "category": "datacenter",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 44.7
   },
   {
     "name": "L4",
     "memory_gb": 24,
     "category": "datacenter",
-    "architecture": "Ada Lovelace"
+    "architecture": "Ada Lovelace",
+    "memory_gib": 22.35
   },
   {
     "name": "NVIDIA RTX PRO 6000 BLACKWELL",
     "memory_gb": 96,
     "category": "workstation",
-    "architecture": "Hopper"
+    "architecture": "Hopper",
+    "memory_gib": 89.41
   },
   {
     "name": "NVIDIA RTX PRO 5000 BLACKWELL",
     "memory_gb": 48,
     "category": "workstation",
-    "architecture": "Hopper"
+    "architecture": "Hopper",
+    "memory_gib": 44.7
   }
 ]

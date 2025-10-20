@@ -100,6 +100,9 @@ class ConfigManager:
         for gpu in gpu_types:
             if "name" not in gpu or "memory_gb" not in gpu:
                 raise ValueError(f"invalid GPU configuration: {gpu}")
+            # auto-calculate memory_gib if not present
+            if "memory_gib" not in gpu:
+                gpu["memory_gib"] = round(gpu["memory_gb"] * (1000**3 / 1024**3), 2)
 
         return gpu_types
 
@@ -126,10 +129,10 @@ class ConfigManager:
             for dtype, info in self.data_types.items()
         }
 
-    def get_gpu_types(self) -> List[Tuple[str, int, str]]:
-        """Get GPU types list with category"""
+    def get_gpu_types(self) -> List[Tuple[str, int, float, str]]:
+        """Get GPU types list with category and actual GiB memory"""
         return [
-            (gpu["name"], gpu["memory_gb"], gpu.get("category", "unknown"))
+            (gpu["name"], gpu["memory_gb"], gpu.get("memory_gib", gpu["memory_gb"] * 0.931323), gpu.get("category", "unknown"))
             for gpu in self.gpu_types
         ]
 
