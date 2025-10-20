@@ -17,7 +17,7 @@ from .parallel import ParallelizationCalculator
 
 __all__ = [
     "VRAMCalculator",
-    "ConfigManager", 
+    "ConfigManager",
     "ModelConfig",
     "ConfigParser",
     "ParallelizationCalculator",

@@ -9,6 +9,7 @@ from typing import Optional, Any
 @dataclass
 class ModelConfig:
     """Model configuration data structure"""
+
     model_name: str
     vocab_size: int
     hidden_size: int
@@ -22,4 +23,6 @@ class ModelConfig:
     model_type: str = "unknown"
     torch_dtype: Optional[str] = None
     recommended_dtype: Optional[str] = None
-    test_config: Optional[Any] = None  # Stores the original config object from AutoConfig
+    test_config: Optional[Any] = (
+        None  # Stores the original config object from AutoConfig
+    )
