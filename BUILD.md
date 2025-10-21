@@ -284,6 +284,7 @@ Add new GPU models by editing `gpu_types.json`:
 {
   "name": "RTX 5090",
   "memory_gb": 32,
+  "memory_gib": 29.8,
   "category": "consumer",
   "architecture": "Blackwell"
 }

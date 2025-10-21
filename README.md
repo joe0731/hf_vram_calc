@@ -301,22 +301,22 @@ The `--output_json` argument saves calculation results in a simplified JSON form
       "batch_size": 1,
       "sequence_length": 2048,
       "lora_rank": 64,
-      "model_size_gb": 6.75,
-      "kv_cache_size_gb": 0.13,
-      "inference_total_gb": 8.10,
-      "training_gb": 35.07,
-      "lora_size_gb": 8.37
+      "model_size_gib": 6.75,
+      "kv_cache_size_gib": 0.13,
+      "inference_total_gib": 8.10,
+      "training_gib": 35.07,
+      "lora_size_gib": 8.37
     },
     {
       "dtype": "BF16",
       "batch_size": 1,
       "sequence_length": 2048,
       "lora_rank": 64,
-      "model_size_gb": 13.49,
-      "kv_cache_size_gb": 0.25,
-      "inference_total_gb": 16.19,
-      "training_gb": 70.14,
-      "lora_size_gb": 16.73
+      "model_size_gib": 13.49,
+      "kv_cache_size_gib": 0.25,
+      "inference_total_gib": 16.19,
+      "training_gib": 70.14,
+      "lora_size_gib": 16.73
     }
   ]
 }

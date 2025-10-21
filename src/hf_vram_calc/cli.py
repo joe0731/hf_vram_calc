@@ -162,11 +162,11 @@ def serialize_results_to_json(
             "batch_size": result.batch_size,
             "sequence_length": result.sequence_length,
             "lora_rank": result.lora_rank,
-            "model_size_gb": round(result.base_memory, 2),
-            "kv_cache_size_gb": round(result.kv_cache_memory, 2),
-            "inference_total_gb": round(result.inference_memory, 2),
-            "training_gb": round(result.training_memory, 2),
-            "lora_size_gb": round(result.lora_memory, 2),
+            "model_size_gib": round(result.base_memory, 2),
+            "kv_cache_size_gib": round(result.kv_cache_memory, 2),
+            "inference_total_gib": round(result.inference_memory, 2),
+            "training_gib": round(result.training_memory, 2),
+            "lora_size_gib": round(result.lora_memory, 2),
         }
         memory_requirements.append(memory_req)
 
@@ -201,12 +201,12 @@ def save_results_to_json(json_output: Dict[str, Any], output_path: str) -> None:
         raise
 
 
-def format_memory_size(memory_gb: float) -> str:
-    """Format memory size with appropriate unit"""
-    if memory_gb >= 1024:
-        return f"{memory_gb / 1024:.2f} TB"
+def format_memory_size(memory_gib: float) -> str:
+    """Format memory size with appropriate unit (GiB)"""
+    if memory_gib >= 1024:
+        return f"{memory_gib / 1024:.2f} TiB"
     else:
-        return f"{memory_gb:.2f} GB"
+        return f"{memory_gib:.2f} GiB"
 
 
 def format_parameters(num_params: int) -> str:
@@ -248,11 +248,11 @@ def print_memory_table(
 
     # Add columns
     table.add_column("Data Type", justify="center", style="cyan", width=12)
-    table.add_column("Model Size\n(GB)", justify="right", style="green", width=12)
-    table.add_column("KV Cache\n(GB)", justify="right", style="magenta", width=15)
-    table.add_column("Inference\nTotal (GB)", justify="right", style="yellow", width=15)
-    table.add_column("Training\n(Adam) (GB)", justify="right", style="red", width=15)
-    table.add_column("LoRA\n(GB)", justify="right", style="blue", width=12)
+    table.add_column("Model Size\n(GiB)", justify="right", style="green", width=12)
+    table.add_column("KV Cache\n(GiB)", justify="right", style="magenta", width=15)
+    table.add_column("Inference\nTotal (GiB)", justify="right", style="yellow", width=15)
+    table.add_column("Training\n(Adam) (GiB)", justify="right", style="red", width=15)
+    table.add_column("LoRA\n(GiB)", justify="right", style="blue", width=12)
 
     # Add rows - display all memory results
     for memory_result in sorted(memory_results, key=lambda x: x.dtype):
@@ -310,7 +310,7 @@ def print_parallelization_table(memory_results: list[LlmodelMemoryResult]):
     table.add_column("PP", justify="center", style="magenta", width=4)
     table.add_column("EP", justify="center", style="yellow", width=4)
     table.add_column("DP", justify="center", style="blue", width=4)
-    table.add_column("Memory/GPU\n(GB)", justify="right", style="green", width=12)
+    table.add_column("Memory/GPU\n(GiB)", justify="right", style="green", width=12)
     table.add_column("Min GPU\nRequired", justify="center", style="red", width=12)
 
     # Common GPU memory sizes for reference
@@ -408,7 +408,7 @@ def print_detailed_recommendations(memory_results: list[LlmodelMemoryResult]):
     )
 
     gpu_table.add_column("GPU Type", justify="left", style="bright_white", width=15)
-    gpu_table.add_column("Memory", justify="center", style="cyan", width=10)
+    gpu_table.add_column("Memory (GB)", justify="center", style="cyan", width=12)
     gpu_table.add_column("Inference", justify="center", style="green", width=12)
     gpu_table.add_column("Training", justify="center", style="red", width=12)
     gpu_table.add_column("LoRA", justify="center", style="blue", width=12)
@@ -423,24 +423,24 @@ def print_detailed_recommendations(memory_results: list[LlmodelMemoryResult]):
     # Limit number of GPUs displayed
     displayed_gpus = gpu_recommendations[:max_display]
 
-    for gpu_name, gpu_memory, category in displayed_gpus:
-        # Check what's possible with single GPU and color code
+    for gpu_name, gpu_memory_gb, gpu_memory_gib, category in displayed_gpus:
+        # Check what's possible with single GPU and color code (use GiB for calculation)
         can_inference = (
-            "[green]✓[/green]" if inference_memory <= gpu_memory else "[red]✗[/red]"
+            "[green]✓[/green]" if inference_memory <= gpu_memory_gib else "[red]✗[/red]"
         )
         can_training = (
-            "[green]✓[/green]" if training_memory <= gpu_memory else "[red]✗[/red]"
+            "[green]✓[/green]" if training_memory <= gpu_memory_gib else "[red]✗[/red]"
         )
-        can_lora = "[green]✓[/green]" if lora_memory <= gpu_memory else "[red]✗[/red]"
+        can_lora = "[green]✓[/green]" if lora_memory <= gpu_memory_gib else "[red]✗[/red]"
 
         # Color code GPU memory based on availability
         memory_style = (
-            "green" if gpu_memory >= 40 else "yellow" if gpu_memory >= 16 else "red"
+            "green" if gpu_memory_gib >= 40 else "yellow" if gpu_memory_gib >= 16 else "red"
         )
 
         gpu_table.add_row(
             gpu_name,
-            f"[{memory_style}]{gpu_memory}GB[/{memory_style}]",
+            f"[{memory_style}]{gpu_memory_gb}GB[/{memory_style}]",
             can_inference,
             can_training,
             can_lora,
@@ -451,9 +451,9 @@ def print_detailed_recommendations(memory_results: list[LlmodelMemoryResult]):
     # Minimum requirements panel
     console.print()
     requirements_text = f"""
-[bold green]Single GPU Inference:[/bold green] {inference_memory:.1f}GB
-[bold red]Single GPU Training:[/bold red] {training_memory:.1f}GB  
-[bold blue]Single GPU LoRA:[/bold blue] {lora_memory:.1f}GB
+[bold green]Single GPU Inference:[/bold green] {inference_memory:.1f} GiB
+[bold red]Single GPU Training:[/bold red] {training_memory:.1f} GiB  
+[bold blue]Single GPU LoRA:[/bold blue] {lora_memory:.1f} GiB
     """
 
     requirements_panel = Panel(

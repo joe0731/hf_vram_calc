@@ -1,5 +1,5 @@
 """
-Minimal decider: use model_size_gb from hf-vram-calc JSON (or provided file),
+Minimal decider: use model_size_gib from hf-vram-calc JSON (or provided file),
 compare to GPU VRAM with simple per-GPU ratio. No complex rules or exceptions.
 """
 
@@ -85,14 +85,14 @@ def prepare_from_cli(args: argparse.Namespace) -> tuple[Dict[str, Any], Dict[str
     return inputs, mem_entry, hf_json
 
 
-def compute_calc(mem_entry: Dict[str, Any], vram_gb: float, num_gpus: int) -> Dict[str, Any]:
-    model_size_gb = float(mem_entry["model_size_gb"])  # assume present
-    per_gpu_required = model_size_gb / max(1, int(num_gpus))
-    ratio = per_gpu_required / float(vram_gb)
+def compute_calc(mem_entry: Dict[str, Any], vram_gib: float, num_gpus: int) -> Dict[str, Any]:
+    model_size_gib = float(mem_entry["model_size_gib"])  # assume present
+    per_gpu_required = model_size_gib / max(1, int(num_gpus))
+    ratio = per_gpu_required / float(vram_gib)
     return {
-        "memory_estimate_gb": round(model_size_gb, 2),
-        "gpu_vram_gb": float(vram_gb),
-        "per_gpu_required_gb": round(per_gpu_required, 2),
+        "memory_estimate_gib": round(model_size_gib, 2),
+        "gpu_vram_gib": float(vram_gib),
+        "per_gpu_required_gib": round(per_gpu_required, 2),
         "ratio": round(ratio, 4),
         "dtype_used": mem_entry.get("dtype"),
     }
@@ -126,8 +126,8 @@ def main() -> None:
             return
         inputs, mem_entry, hf_json = prepare_from_cli(args)
 
-    # Compute
-    calc = compute_calc(mem_entry, float(gpu_caps["vram_gb"]), inputs["num_gpus"])
+    # Compute (use vram_gib for accurate calculation)
+    calc = compute_calc(mem_entry, float(gpu_caps["vram_gib"]), inputs["num_gpus"])
     decision = decide(calc["ratio"])
 
     out = {"decision": decision, "inputs": inputs, "calc": calc}
