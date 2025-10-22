@@ -188,11 +188,12 @@ class ParameterCalculator:
                 torch_dtype=torch_dtype,
                 trust_remote_code=True,
             )
+            print(f"\n[INSTANTIATION INFO]: Using AutoModelForCausalLM for {model_name}")
             return model
         except (ValueError, TypeError) as e:
-            print(f"info: AutoModelForCausalLM unavailable for {model_name}: {e}")
+            print(f"\n[INSTANTIATION INFO]: AutoModelForCausalLM unavailable for {model_name}: {e}")
         except Exception as e:
-            print(f"info: AutoModelForCausalLM failed for {model_name}: {e}")
+            print(f"\n[INSTANTIATION INFO]: AutoModelForCausalLM failed for {model_name}: {e}")
 
         # attempt 2: fallback to AutoModel (more versatile for encoder-only models)
         try:
@@ -201,10 +202,10 @@ class ParameterCalculator:
                 torch_dtype=torch_dtype,
                 trust_remote_code=True,
             )
-            print(f"info: using AutoModel fallback for {model_name}")
+            print(f"\n[INSTANTIATION INFO]: Using AutoModel fallback for {model_name}")
             return model
         except Exception as e:
-            print(f"warning: AutoModel fallback also failed for {model_name}: {e}")
+            print(f"\n[INSTANTIATION INFO]: AutoModel fallback also failed for {model_name}: {e}")
             return None
 
     @staticmethod
