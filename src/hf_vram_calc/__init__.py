@@ -5,7 +5,7 @@ A Python package for estimating GPU memory requirements for Hugging Face models
 with different data types and parallelization strategies.
 """
 
-__version__ = "1.0.7"
+__version__ = "1.0.8"
 __author__ = "HF VRAM Calculator Contributors"
 __email__ = "your-email@example.com"
 

@@ -40,7 +40,7 @@ import tempfile
 import uuid
 import torch
 from accelerate import init_empty_weights
-from transformers import AutoModelForCausalLM
+from transformers import AutoModel, AutoModelForCausalLM
 from dataclasses import dataclass
 from typing import Dict
 
@@ -126,14 +126,16 @@ class ParameterCalculator:
             # Get the actual torch_dtype from config, fallback to bfloat16 if not specified
             torch_dtype = getattr(config, "torch_dtype", torch.bfloat16)
             if isinstance(torch_dtype, str):
-                # Convert string dtype to torch dtype
-                torch_dtype = getattr(torch, torch_dtype, torch.bfloat16)
+                torch_attr_name = torch_dtype.split(".")[-1]
+                if hasattr(torch, torch_attr_name):
+                    torch_dtype = getattr(torch, torch_attr_name)
+                else:
+                    torch_dtype = torch.bfloat16
 
-            # Create empty model to get exact parameter count
             try:
                 with init_empty_weights():
-                    model = AutoModelForCausalLM.from_config(
-                        test_config, torch_dtype=torch_dtype
+                    model = ParameterCalculator._create_empty_model(
+                        test_config, torch_dtype, config.model_name
                     )
             except Exception as e:
                 print(
@@ -141,6 +143,12 @@ class ParameterCalculator:
                 )
                 print(
                     f"Please try to use pip install transformers=={config.transformers_version} or pip install --upgrade transformers"
+                )
+                return None
+
+            if model is None:
+                print(
+                    f"Warning: Failed to instantiate model for parameter counting: {config.model_name}"
                 )
                 return None
 
@@ -156,6 +164,47 @@ class ParameterCalculator:
             print(
                 f"Warning: Accurate parameter calculation failed for {config.model_name}: {e}"
             )
+            return None
+
+    @staticmethod
+    def _create_empty_model(config, torch_dtype, model_name: str):
+        """
+        create empty model instance with fallback strategy for parameter counting.
+        
+        tries AutoModelForCausalLM first, falls back to AutoModel if needed.
+        
+        Args:
+            config: model configuration object
+            torch_dtype: torch data type for model
+            model_name: model name for logging
+            
+        Returns:
+            model instance or None if both attempts fail
+        """
+        # attempt 1: try AutoModelForCausalLM (most common for lm-based generative models)
+        try:
+            model = AutoModelForCausalLM.from_config(
+                config,
+                torch_dtype=torch_dtype,
+                trust_remote_code=True,
+            )
+            return model
+        except (ValueError, TypeError) as e:
+            print(f"info: AutoModelForCausalLM unavailable for {model_name}: {e}")
+        except Exception as e:
+            print(f"info: AutoModelForCausalLM failed for {model_name}: {e}")
+
+        # attempt 2: fallback to AutoModel (more versatile for encoder-only models)
+        try:
+            model = AutoModel.from_config(
+                config,
+                torch_dtype=torch_dtype,
+                trust_remote_code=True,
+            )
+            print(f"info: using AutoModel fallback for {model_name}")
+            return model
+        except Exception as e:
+            print(f"warning: AutoModel fallback also failed for {model_name}: {e}")
             return None
 
     @staticmethod
