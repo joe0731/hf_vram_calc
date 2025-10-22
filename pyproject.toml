@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hf-vram-calc"
-version = "1.0.7"
+version = "1.0.8"
 description = "GPU memory calculator for Hugging Face models with different data types and parallelization strategies"
 readme = "README.md"
 license = {text = "MIT"}
